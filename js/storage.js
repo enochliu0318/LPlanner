@@ -50,6 +50,9 @@ function blankPlan() {
     lessonTitle: "",
     hours: "1",
     objectives: "",
+    keyPoints: "",
+    difficultPoints: "",
+    methods: "",
     references: [
       { label: "PPT", url: "" },
       { label: "参考资料", url: "" }
