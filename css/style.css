@@ -681,6 +681,98 @@ input:focus, textarea:focus, select:focus {
   table.doc-table .doc-bullet { padding-left: 1.6em; text-indent: -1.3em; margin: 2pt 0; }
 }
 
+/* ---------- PDF 捕获模式（html2canvas 截图用） ---------- */
+/* 通过 .pdf-capture 类让打印视图在屏幕可见，同时复用打印样式 */
+
+body.pdf-capture .app-rail,
+body.pdf-capture .app-main > *:not(#print-root) { display: none !important; }
+body.pdf-capture #print-root {
+  display: block !important;
+  position: fixed;
+  left: 0;
+  top: 0;
+  width: 210mm;
+  min-height: 297mm;
+  background: #fff;
+  z-index: -1;
+  font-family: "Songti SC", "SimSun", "Times New Roman", serif;
+  font-size: 11pt;
+  line-height: 1.6;
+  color: #000;
+  padding: 20mm 18mm;
+  box-sizing: border-box;
+}
+body.pdf-capture { background: #fff; }
+
+/* 打印视图元素样式（在 PDF 捕获模式下生效） */
+body.pdf-capture .doc-title {
+  text-align: center;
+  font-size: 30pt;
+  font-weight: 700;
+  letter-spacing: 0.25em;
+  margin: 28pt 0 34pt;
+  color: #000;
+}
+body.pdf-capture .doc-info { margin: 0 0 8pt 4em; }
+body.pdf-capture .doc-info p { margin: 0 0 10pt; font-size: 13pt; }
+body.pdf-capture .doc-info .doc-label { display: inline-block; min-width: 5.5em; }
+body.pdf-capture .doc-info .doc-value {
+  font-weight: 700;
+  text-decoration: underline;
+  text-underline-offset: 3pt;
+  text-decoration-thickness: 1pt;
+}
+body.pdf-capture .doc-banner {
+  border: 1px solid #aaa;
+  background: repeating-linear-gradient(45deg, #ececec 0 5px, #fafafa 5px 10px);
+  padding: 3pt 8pt;
+  font-size: 10.5pt;
+  margin: 14pt 0 10pt;
+}
+body.pdf-capture table.doc-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 12pt;
+}
+body.pdf-capture table.doc-table th,
+body.pdf-capture table.doc-table td {
+  border: 1px solid #000;
+  padding: 6pt 8pt;
+  vertical-align: top;
+  text-align: left;
+  word-break: break-word;
+}
+body.pdf-capture table.doc-table th {
+  width: 15%;
+  font-weight: 400;
+  text-align: center;
+  vertical-align: middle;
+}
+body.pdf-capture table.doc-table td.doc-multiline { min-height: 26pt; }
+body.pdf-capture table.doc-table th.doc-process-head {
+  width: auto;
+  text-align: center;
+  font-size: 14pt;
+  letter-spacing: 0.2em;
+  padding: 8pt;
+}
+body.pdf-capture td.doc-process-content { width: 78%; }
+body.pdf-capture td.doc-process-remarks { width: 22%; }
+body.pdf-capture th.doc-process-remarks-head { width: 22%; font-weight: 600; }
+body.pdf-capture td.doc-row-label { letter-spacing: 0.1em; }
+body.pdf-capture td.doc-tall { min-height: 80pt; }
+body.pdf-capture td.doc-process-content .cn-num { font-weight: 700; }
+body.pdf-capture table.doc-table td.doc-process-content ul {
+  margin: 0;
+  padding-left: 1.5em;
+  list-style-type: disc;
+}
+body.pdf-capture table.doc-table td.doc-process-content ul ul { list-style-type: circle; }
+body.pdf-capture table.doc-table td.doc-process-content ul ul ul { list-style-type: square; }
+body.pdf-capture table.doc-table td.doc-process-content > ul > li { font-weight: 700; }
+body.pdf-capture table.doc-table td.doc-process-content li { margin: 3pt 0; }
+body.pdf-capture table.doc-table .doc-bullet { padding-left: 1.6em; text-indent: -1.3em; margin: 2pt 0; }
+
 /* ---------- 响应式 ---------- */
 
 @media (max-width: 900px) {

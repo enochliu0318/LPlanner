@@ -1,7 +1,8 @@
-import { Storage } from "./storage.js?v=8";
-import { exportPlanToDocx } from "./docx-export.js?v=8";
-import { Tabs, NEW_TAB, renderRailTabs } from "./tabs.js?v=8";
-import { buildDocumentModel } from "./document-model.js?v=8";
+import { Storage } from "./storage.js?v=10";
+import { exportPlanToDocx } from "./docx-export.js?v=10";
+import { exportPlanToPdf } from "./pdf-export.js?v=10";
+import { Tabs, NEW_TAB, renderRailTabs } from "./tabs.js?v=10";
+import { buildDocumentModel } from "./document-model.js?v=10";
 
 const params = new URLSearchParams(location.search);
 const existingId = params.get("id");
@@ -11,7 +12,7 @@ let isNew = false;
 if (existingId && !plan) {
   // 带着 id 打开却找不到教案：可能是已被删除，或浏览器缓存了旧版页面。
   // 明确提示，避免用户误以为在"编辑"，保存后凭空多出一份新教案。
-  alert("未找到要编辑的教案（它可能已被删除，或页面缓存了旧版本）。\n已为你打开一份新的空白教案。");
+  alert("未找到要编辑的教案（它可能已被删除，或页面缓存了旧版本）。已为你打开一份新的空白教案。");
 }
 if (!plan) {
   plan = Storage.blankPlan();
@@ -206,25 +207,19 @@ $("#delete-btn").addEventListener("click", () => {
 
 /* ---------------- 导出 PDF（浏览器打印） ---------------- */
 
-$("#export-pdf-btn").addEventListener("click", () => {
+$("#export-pdf-btn").addEventListener("click", async () => {
   readFormIntoPlan();
-  buildPrintView(plan);
-  // 打印预览的页眉取自 document.title（如"Lesson 1 · 备课本"），
-  // 打印期间临时置空，避免页眉带上网站标题；打印后恢复。
-  const origTitle = document.title;
-  document.title = "";
-  const restore = () => { document.title = origTitle; };
-  window.addEventListener("afterprint", function handler() {
-    window.removeEventListener("afterprint", handler);
-    restore();
-  });
-  window.print();
-  setTimeout(restore, 4000);
+  try {
+    await exportPlanToPdf(plan, buildPrintHtml);
+  } catch (err) {
+    console.error(err);
+    alert("导出 PDF 失败，请检查网络是否可以访问 PDF 组件（首次导出需要联网加载一次）。");
+  }
 });
 
-function buildPrintView(p) {
+/** 生成打印视图的 HTML 字符串（供 PDF 导出和浏览器打印共用） */
+function buildPrintHtml(p) {
   const doc = buildDocumentModel(p);
-  const root = $("#print-root");
 
   const infoHtml = doc.info.map(i =>
     `<p><span class="doc-label">${escapeHtml(i.label)}</span><span class="doc-value">${escapeHtml(i.value)}</span></p>`
@@ -242,7 +237,7 @@ function buildPrintView(p) {
     `<div class="doc-bullet">• ${escapeHtml(l)}</div>`
   ).join("");
 
-  root.innerHTML = `
+  return `
     <h1 class="doc-title">授&nbsp;课&nbsp;教&nbsp;案</h1>
     <div class="doc-info">${infoHtml}</div>
     <div class="doc-banner">●&ensp;${escapeHtml(doc.lessonPlanBanner)}</div>
@@ -260,6 +255,10 @@ function buildPrintView(p) {
       <tr><td class="doc-tall doc-multiline">${nl2br(doc.summary)}</td><td class="doc-process-remarks"></td></tr>
     </table>
   `;
+}
+
+function buildPrintView(p) {
+  $("#print-root").innerHTML = buildPrintHtml(p);
 }
 
 /* ---------------- 导出 Word ---------------- */
