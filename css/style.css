@@ -779,6 +779,7 @@ body.pdf-capture table.doc-table .doc-bullet { padding-left: 1.6em; text-indent:
 
 /* ---------- 响应式 ---------- */
 
+/* 平板横屏 (900px 以下) */
 @media (max-width: 900px) {
   .app-shell { flex-direction: column; }
   .app-rail { width: 100%; flex-direction: row; align-items: center; padding: 14px 18px; gap: 18px; }
@@ -792,4 +793,189 @@ body.pdf-capture table.doc-table .doc-bullet { padding-left: 1.6em; text-indent:
   .app-rail .rail-foot { display: none; }
   .app-main { padding: 24px; }
   .field-grid { grid-template-columns: 1fr; }
+}
+
+/* 手机竖屏 (600px 以下) */
+@media (max-width: 600px) {
+  .app-rail {
+    flex-wrap: wrap;
+    padding: 12px 14px;
+    gap: 10px;
+  }
+  .app-rail .brand {
+    font-size: 17px;
+    width: 100%;
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+  }
+  .app-rail .brand small {
+    margin-top: 0;
+    font-size: 11px;
+  }
+  .app-rail nav {
+    width: 100%;
+    order: 3;
+  }
+  .app-rail nav a {
+    flex: 1;
+    text-align: center;
+    padding: 8px 6px;
+    font-size: 13px;
+  }
+  .app-rail .rail-tabs {
+    order: 2;
+    width: 100%;
+    flex: none;
+  }
+  .app-main {
+    padding: 16px 14px;
+  }
+  .page-head {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 14px;
+    margin-bottom: 20px;
+  }
+  .page-head h1 { font-size: 22px; }
+  .page-head p { font-size: 13px; }
+  .toolbar {
+    width: 100%;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+  .toolbar .btn {
+    justify-content: center;
+    padding: 10px 12px;
+    font-size: 13px;
+  }
+  .toolbar .btn:first-child {
+    grid-column: 1 / -1;
+  }
+  .form-section {
+    padding: 16px 14px;
+  }
+  .form-section h2 {
+    font-size: 14px;
+    padding-bottom: 8px;
+    margin-bottom: 12px;
+  }
+  .field-grid {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+  .field label {
+    font-size: 12px;
+  }
+  .field .hint {
+    font-size: 11px;
+  }
+  input[type="text"], input[type="date"], input[type="number"], input[type="url"], textarea {
+    padding: 10px 10px;
+    font-size: 14px;
+  }
+  textarea {
+    min-height: 72px;
+  }
+  .rich-toolbar {
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+  .rt-btn {
+    padding: 6px 10px;
+    font-size: 12px;
+  }
+  .rich-editor {
+    min-height: 180px;
+    padding: 12px;
+    font-size: 14px;
+  }
+  .save-bar {
+    flex-direction: column;
+    gap: 10px;
+    padding: 12px 0;
+  }
+  .save-bar .btn {
+    width: 100%;
+    justify-content: center;
+    padding: 12px;
+  }
+  .save-status {
+    text-align: center;
+    font-size: 12px;
+  }
+  /* 卡片网格：单列 */
+  .card-grid {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+  .plan-card {
+    padding: 14px 14px 12px;
+  }
+  .plan-card h3 {
+    font-size: 16px;
+  }
+  .plan-card .plan-meta {
+    font-size: 12px;
+  }
+  .plan-card .plan-actions {
+    gap: 6px;
+  }
+  .plan-card .plan-actions .btn {
+    flex: 1;
+    justify-content: center;
+    padding: 8px 6px;
+    font-size: 12px;
+  }
+  /* 搜索栏 */
+  .search-row {
+    flex-direction: column;
+    gap: 8px;
+    margin-bottom: 16px;
+  }
+  .search-row input[type="search"] {
+    max-width: none;
+    padding: 10px 12px;
+  }
+  /* 空状态 */
+  .empty-state {
+    padding: 40px 16px;
+  }
+  .empty-state h2 {
+    font-size: 17px;
+  }
+  /* 参考资料行 */
+  .repeat-row {
+    grid-template-columns: 90px 1fr auto;
+    gap: 6px;
+  }
+  /* AI 占位 */
+  .ai-placeholder {
+    padding: 12px;
+    font-size: 12px;
+  }
+}
+
+/* 小屏手机 (380px 以下) */
+@media (max-width: 380px) {
+  .app-rail .brand {
+    font-size: 16px;
+  }
+  .app-rail nav a {
+    font-size: 12px;
+    padding: 6px 4px;
+  }
+  .toolbar {
+    grid-template-columns: 1fr;
+  }
+  .page-head h1 {
+    font-size: 20px;
+  }
+  .form-section {
+    padding: 12px 10px;
+  }
+  .plan-card .plan-actions {
+    flex-direction: column;
+  }
 }
