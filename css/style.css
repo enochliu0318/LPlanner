@@ -663,8 +663,10 @@ input:focus, textarea:focus, select:focus {
   }
   td.doc-process-content { width: 78%; }
   td.doc-process-remarks { width: 22%; }
+  th.doc-process-remarks-head { width: 22%; font-weight: 600; }
   td.doc-row-label { letter-spacing: 0.1em; }
   td.doc-tall { min-height: 80pt; }
+  td.doc-process-content .cn-num { font-weight: 700; }
 
   /* 多级讲稿列表：与编辑器一致的圆点 + 悬挂缩进（所见即所得） */
   table.doc-table td.doc-process-content ul {

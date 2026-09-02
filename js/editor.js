@@ -1,6 +1,6 @@
-import { Storage } from "./storage.js?v=6";
-import { exportPlanToDocx } from "./docx-export.js?v=6";
-import { Tabs, NEW_TAB, renderRailTabs } from "./tabs.js?v=6";
+import { Storage } from "./storage.js?v=7";
+import { exportPlanToDocx } from "./docx-export.js?v=7";
+import { Tabs, NEW_TAB, renderRailTabs } from "./tabs.js?v=7";
 
 const params = new URLSearchParams(location.search);
 const existingId = params.get("id");
@@ -221,6 +221,22 @@ $("#export-pdf-btn").addEventListener("click", () => {
   setTimeout(restore, 4000);
 });
 
+/** 讲稿内容：一级条目改用中文数字编号（一、二、三…），与模板一致 */
+function addChineseNumbering(html) {
+  if (!html.trim()) return html;
+  const container = document.createElement("div");
+  container.innerHTML = html;
+  const CN = ["一", "二", "三", "四", "五", "六", "七", "八", "九", "十"];
+  const topLis = container.querySelectorAll(":scope > ul > li");
+  topLis.forEach((li, i) => {
+    const span = document.createElement("span");
+    span.className = "cn-num";
+    span.textContent = (CN[i] || (i + 1)) + "、";
+    li.insertBefore(span, li.firstChild);
+  });
+  return container.innerHTML;
+}
+
 /** 作业/多条目内容 → 带圆点的段落 */
 function buildBulletLines(text) {
   const lines = String(text || "").split("\n").map(s => s.trim()).filter(Boolean);
@@ -256,13 +272,13 @@ function buildPrintView(p) {
       <tr><th>参考资料</th><td class="doc-multiline">${refHtml}</td></tr>
     </table>
 
-    <div class="doc-banner page-break">●&ensp;讲稿部分（教学内容及过程）：每 1 学时/60 分钟一个讲稿</div>
+    <div class="doc-banner page-break">●&ensp;讲稿部分（教学内容及过程）每课次连续完整，任课教师应逐课次完整填写讲稿</div>
 
     <table class="doc-table doc-process">
-      <tr><th class="doc-process-head" colspan="2">教学内容及过程</th></tr>
+      <tr><th class="doc-process-head">教学内容及过程</th><th class="doc-process-remarks-head">备注</th></tr>
       <tr>
-        <td class="doc-process-content doc-multiline">${plan.contentHtml || ""}</td>
-        <td class="doc-process-remarks doc-multiline">备注：${nl2br(p.remarks)}</td>
+        <td class="doc-process-content doc-multiline">${addChineseNumbering(plan.contentHtml || "")}</td>
+        <td class="doc-process-remarks doc-multiline">${nl2br(p.remarks)}</td>
       </tr>
       <tr><td class="doc-row-label">作业布置</td><td class="doc-process-remarks"></td></tr>
       <tr><td class="doc-multiline">${buildBulletLines(p.homework)}</td><td class="doc-process-remarks"></td></tr>

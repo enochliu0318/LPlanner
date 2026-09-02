@@ -126,6 +126,8 @@ export async function exportPlanToDocx(plan) {
       });
     };
 
+    const CN = ["一", "二", "三", "四", "五", "六", "七", "八", "九", "十"];
+    let topIndex = 0;
     const walkList = (list, depth) => {
       Array.from(list.children).forEach(el => {
         // 兼容浏览器两种输出：<ul> 嵌在 <li> 内，或直接并列在上级 <ul> 下
@@ -133,12 +135,18 @@ export async function exportPlanToDocx(plan) {
         if (el.tagName !== "LI") return;
         const runs = [];
         collectRuns(el, { b: depth === 1, i: false, u: false }, runs);
+        let prefix;
+        if (depth === 1) {
+          const n = CN[topIndex] || (topIndex + 1);
+          prefix = run(n + "、", { bold: true });
+          topIndex++;
+        } else {
+          prefix = run(BULLET[depth] || "• ", { bold: false });
+        }
         paras.push(new Paragraph({
           indent: { left: (depth - 1) * 360 + 280, hanging: 240 },
           spacing: { line: 320, after: 40 },
-          children: [run(BULLET[depth] || "• ", { bold: depth === 1 })].concat(
-            runs.length ? runs : [run(" ")]
-          )
+          children: [prefix].concat(runs.length ? runs : [run(" ")])
         }));
         Array.from(el.children).forEach(child => {
           if (child.tagName === "UL" || child.tagName === "OL") walkList(child, depth + 1);
@@ -247,7 +255,7 @@ export async function exportPlanToDocx(plan) {
   }));
 
   // 讲稿部分（另起一页）
-  children.push(banner("讲稿部分（教学内容及过程）：每 1 学时/60 分钟一个讲稿", true));
+  children.push(banner("讲稿部分（教学内容及过程）每课次连续完整，任课教师应逐课次完整填写讲稿", true));
   const emptyRemark = parts => simpleCell(parts, PROC_REMARK_W);
   children.push(new Table({
     width: { size: PAGE_W, type: DXA },
@@ -255,24 +263,31 @@ export async function exportPlanToDocx(plan) {
     columnWidths: [PROC_CONTENT_W, PROC_REMARK_W],
     rows: [
       new TableRow({
-        children: [new TableCell({
-          columnSpan: 2,
-          width: W(PAGE_W),
-          verticalAlign: VerticalAlign.CENTER,
-          margins: CELL_MARGIN,
-          children: [new Paragraph({
-            alignment: AlignmentType.CENTER,
-            children: [run("教学内容及过程", { size: 28 })]
-          })]
-        })]
+        children: [
+          new TableCell({
+            width: W(PROC_CONTENT_W),
+            verticalAlign: VerticalAlign.CENTER,
+            margins: CELL_MARGIN,
+            children: [new Paragraph({
+              alignment: AlignmentType.CENTER,
+              children: [run("教学内容及过程", { size: 28 })]
+            })]
+          }),
+          new TableCell({
+            width: W(PROC_REMARK_W),
+            verticalAlign: VerticalAlign.CENTER,
+            margins: CELL_MARGIN,
+            children: [new Paragraph({
+              alignment: AlignmentType.CENTER,
+              children: [run("备注", { size: 28 })]
+            })]
+          })
+        ]
       }),
       new TableRow({
         children: [
           valueCell(outlineParagraphs(), PROC_CONTENT_W),
-          valueCell(
-            [new Paragraph({ children: [run("备注：")] })].concat(textParagraphs(plan.remarks)),
-            PROC_REMARK_W
-          )
+          valueCell(textParagraphs(plan.remarks), PROC_REMARK_W)
         ]
       }),
       new TableRow({
