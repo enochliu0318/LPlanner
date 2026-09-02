@@ -1,5 +1,5 @@
-import { Storage } from "./storage.js?v=5";
-import { renderRailTabs } from "./tabs.js?v=5";
+import { Storage } from "./storage.js?v=6";
+import { renderRailTabs } from "./tabs.js?v=6";
 
 const grid = document.getElementById("card-grid");
 const emptyState = document.getElementById("empty-state");
@@ -56,7 +56,7 @@ function render(keyword = "") {
     card.innerHTML = `
       <div class="plan-course">${escapeHtml(plan.courseName || "未分类课程")}${plan.courseCategory ? " · " + escapeHtml(plan.courseCategory) : ""}</div>
       <h3>${escapeHtml(plan.lessonTitle || "（未命名课题）")}</h3>
-      <div class="plan-meta">
+      <div class="plan-meta plan-meta-lines">
         <span>教师：${escapeHtml(plan.teacher || "—")}</span>
         <span>上课时间：${escapeHtml(plan.teachDate || "—")}</span>
         <span>学时：${escapeHtml(String(plan.hours || "1"))}</span>

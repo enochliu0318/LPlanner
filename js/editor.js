@@ -1,6 +1,6 @@
-import { Storage } from "./storage.js?v=5";
-import { exportPlanToDocx } from "./docx-export.js?v=5";
-import { Tabs, NEW_TAB, renderRailTabs } from "./tabs.js?v=5";
+import { Storage } from "./storage.js?v=6";
+import { exportPlanToDocx } from "./docx-export.js?v=6";
+import { Tabs, NEW_TAB, renderRailTabs } from "./tabs.js?v=6";
 
 const params = new URLSearchParams(location.search);
 const existingId = params.get("id");
@@ -208,7 +208,17 @@ $("#delete-btn").addEventListener("click", () => {
 $("#export-pdf-btn").addEventListener("click", () => {
   readFormIntoPlan();
   buildPrintView(plan);
+  // 打印预览的页眉取自 document.title（如"Lesson 1 · 备课本"），
+  // 打印期间临时置空，避免页眉带上网站标题；打印后恢复。
+  const origTitle = document.title;
+  document.title = "";
+  const restore = () => { document.title = origTitle; };
+  window.addEventListener("afterprint", function handler() {
+    window.removeEventListener("afterprint", handler);
+    restore();
+  });
   window.print();
+  setTimeout(restore, 4000);
 });
 
 /** 作业/多条目内容 → 带圆点的段落 */
@@ -252,12 +262,12 @@ function buildPrintView(p) {
       <tr><th class="doc-process-head" colspan="2">教学内容及过程</th></tr>
       <tr>
         <td class="doc-process-content doc-multiline">${plan.contentHtml || ""}</td>
-        <td class="doc-process-remarks doc-multiline" rowspan="5">备注：${nl2br(p.remarks)}</td>
+        <td class="doc-process-remarks doc-multiline">备注：${nl2br(p.remarks)}</td>
       </tr>
-      <tr><td class="doc-row-label">作业布置</td></tr>
-      <tr><td class="doc-multiline">${buildBulletLines(p.homework)}</td></tr>
-      <tr><td class="doc-row-label">课后小结</td></tr>
-      <tr><td class="doc-tall doc-multiline">${nl2br(p.summary)}</td></tr>
+      <tr><td class="doc-row-label">作业布置</td><td class="doc-process-remarks"></td></tr>
+      <tr><td class="doc-multiline">${buildBulletLines(p.homework)}</td><td class="doc-process-remarks"></td></tr>
+      <tr><td class="doc-row-label">课后小结</td><td class="doc-process-remarks"></td></tr>
+      <tr><td class="doc-tall doc-multiline">${nl2br(p.summary)}</td><td class="doc-process-remarks"></td></tr>
     </table>
   `;
 }

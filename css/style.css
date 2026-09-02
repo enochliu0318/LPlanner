@@ -337,6 +337,12 @@ button, input, textarea, select {
   flex-wrap: wrap;
 }
 
+/* 教师 / 上课时间 / 学时：每一项单独一行，长短都不影响排版 */
+.plan-card .plan-meta-lines {
+  flex-direction: column;
+  gap: 3px;
+}
+
 .plan-card .plan-actions {
   margin-top: 10px;
   display: flex;
@@ -639,6 +645,11 @@ input:focus, textarea:focus, select:focus {
   }
   tr { page-break-inside: avoid; }
 
+  /* 讲稿部分大表：允许在单元格内自然跨页，避免出现空白页 */
+  table.doc-process { page-break-inside: auto; }
+  table.doc-process td { page-break-inside: auto; }
+  table.doc-process tr { page-break-inside: auto; }
+
   /* 空内容单元格保留最小高度，便于打印后手写 */
   table.doc-table td.doc-multiline { min-height: 26pt; }
 
@@ -653,7 +664,7 @@ input:focus, textarea:focus, select:focus {
   td.doc-process-content { width: 78%; }
   td.doc-process-remarks { width: 22%; }
   td.doc-row-label { letter-spacing: 0.1em; }
-  td.doc-tall { height: 80pt; }
+  td.doc-tall { min-height: 80pt; }
 
   /* 多级讲稿列表：与编辑器一致的圆点 + 悬挂缩进（所见即所得） */
   table.doc-table td.doc-process-content ul {

@@ -51,9 +51,16 @@ export async function exportPlanToDocx(plan) {
   await ensureLibs();
   const docx = window.docx;
   const { Document, Paragraph, TextRun, Table, TableRow, TableCell, WidthType,
-          AlignmentType, VerticalAlign, ShadingType, Packer } = docx;
+          AlignmentType, VerticalAlign, ShadingType, TableLayoutType, Packer } = docx;
 
   const PCT = WidthType.PERCENTAGE;
+  const DXA = WidthType.DXA;
+  // A4 宽 11906，减左右 2cm(1134+1134) 后正文可用宽 9638 twips
+  const PAGE_W = 9638;
+  const W = (tw) => ({ size: tw, type: DXA });
+  // 教案表：标签 15% / 内容 85%；讲稿表：内容 80% / 备注 20%
+  const INFO_LABEL_W = 1446, INFO_VALUE_W = PAGE_W - 1446;
+  const PROC_CONTENT_W = Math.round(PAGE_W * 0.80), PROC_REMARK_W = PAGE_W - PROC_CONTENT_W;
   // 中文文档经典搭配：西文 Times New Roman + 中文宋体；正文 11pt（size 单位为半磅）
   const FONT = { ascii: "Times New Roman", hAnsi: "Times New Roman", eastAsia: "宋体" };
   const CELL_MARGIN = { top: 60, bottom: 60, left: 140, right: 140 };
@@ -150,8 +157,8 @@ export async function exportPlanToDocx(plan) {
   };
 
   /** 表格标签单元格（居中，模板中不加粗） */
-  const labelCell = (text, widthPct) => new TableCell({
-    width: { size: widthPct, type: PCT },
+  const labelCell = (text, tw) => new TableCell({
+    width: W(tw),
     verticalAlign: VerticalAlign.CENTER,
     margins: CELL_MARGIN,
     children: [new Paragraph({
@@ -160,12 +167,19 @@ export async function exportPlanToDocx(plan) {
     })]
   });
 
-  /** 内容单元格（可跨列/跨行） */
-  const valueCell = (paragraphs, widthPct, opts = {}) => new TableCell({
-    columnSpan: opts.span,
-    rowSpan: opts.rowSpan,
-    width: { size: widthPct, type: PCT },
+  /** 内容单元格（可跨列合并） */
+  const valueCell = (paragraphs, tw, span) => new TableCell({
+    columnSpan: span,
+    width: W(tw),
     verticalAlign: VerticalAlign.TOP,
+    margins: CELL_MARGIN,
+    children: paragraphs
+  });
+
+  /** 简单单元格（作业布置/课后小结的标签行、备注空列） */
+  const simpleCell = (paragraphs, tw) => new TableCell({
+    width: W(tw),
+    verticalAlign: VerticalAlign.CENTER,
     margins: CELL_MARGIN,
     children: paragraphs
   });
@@ -208,22 +222,24 @@ export async function exportPlanToDocx(plan) {
   // 教案部分
   children.push(banner("教案部分：每 1 学时/60 分钟一个教案"));
   children.push(new Table({
-    width: { size: 100, type: PCT },
+    width: { size: PAGE_W, type: DXA },
+    layout: TableLayoutType.FIXED,
+    columnWidths: [INFO_LABEL_W, INFO_VALUE_W],
     rows: [
-      new TableRow({ children: [labelCell("课　　题", 16), valueCell(textParagraphs(plan.lessonTitle), 84)] }),
-      new TableRow({ children: [labelCell("学　　时", 16), valueCell(textParagraphs(String(plan.hours ?? "")), 84)] }),
-      new TableRow({ children: [labelCell("教学目标与要求", 16), valueCell(textParagraphs(plan.objectives), 84)] }),
-      new TableRow({ children: [labelCell("重　　点", 16), valueCell(textParagraphs(plan.keyPoints), 84)] }),
-      new TableRow({ children: [labelCell("难　　点", 16), valueCell(textParagraphs(plan.difficultPoints), 84)] }),
-      new TableRow({ children: [labelCell("教学方法与手段", 16), valueCell(textParagraphs(plan.methods), 84)] }),
+      new TableRow({ children: [labelCell("课　　题", INFO_LABEL_W), valueCell(textParagraphs(plan.lessonTitle), INFO_VALUE_W)] }),
+      new TableRow({ children: [labelCell("学　　时", INFO_LABEL_W), valueCell(textParagraphs(String(plan.hours ?? "")), INFO_VALUE_W)] }),
+      new TableRow({ children: [labelCell("教学目标与要求", INFO_LABEL_W), valueCell(textParagraphs(plan.objectives), INFO_VALUE_W)] }),
+      new TableRow({ children: [labelCell("重　　点", INFO_LABEL_W), valueCell(textParagraphs(plan.keyPoints), INFO_VALUE_W)] }),
+      new TableRow({ children: [labelCell("难　　点", INFO_LABEL_W), valueCell(textParagraphs(plan.difficultPoints), INFO_VALUE_W)] }),
+      new TableRow({ children: [labelCell("教学方法与手段", INFO_LABEL_W), valueCell(textParagraphs(plan.methods), INFO_VALUE_W)] }),
       new TableRow({
         children: [
-          labelCell("参考资料", 16),
+          labelCell("参考资料", INFO_LABEL_W),
           valueCell(
             refRows.length
               ? refRows.flatMap(r => textParagraphs(`${r.label || "资料"}：${r.url || ""}`))
               : textParagraphs(""),
-            84
+            INFO_VALUE_W
           )
         ]
       })
@@ -232,13 +248,16 @@ export async function exportPlanToDocx(plan) {
 
   // 讲稿部分（另起一页）
   children.push(banner("讲稿部分（教学内容及过程）：每 1 学时/60 分钟一个讲稿", true));
+  const emptyRemark = parts => simpleCell(parts, PROC_REMARK_W);
   children.push(new Table({
-    width: { size: 100, type: PCT },
+    width: { size: PAGE_W, type: DXA },
+    layout: TableLayoutType.FIXED,
+    columnWidths: [PROC_CONTENT_W, PROC_REMARK_W],
     rows: [
       new TableRow({
         children: [new TableCell({
           columnSpan: 2,
-          width: { size: 100, type: PCT },
+          width: W(PAGE_W),
           verticalAlign: VerticalAlign.CENTER,
           margins: CELL_MARGIN,
           children: [new Paragraph({
@@ -249,28 +268,36 @@ export async function exportPlanToDocx(plan) {
       }),
       new TableRow({
         children: [
-          valueCell(outlineParagraphs(), 80),
+          valueCell(outlineParagraphs(), PROC_CONTENT_W),
           valueCell(
             [new Paragraph({ children: [run("备注：")] })].concat(textParagraphs(plan.remarks)),
-            20,
-            { rowSpan: 5 }
+            PROC_REMARK_W
           )
         ]
       }),
-      new TableRow({ children: [new TableCell({
-        width: { size: 80, type: PCT }, margins: CELL_MARGIN,
-        children: [new Paragraph({ children: [run("作业布置")] })]
-      })] }),
-      new TableRow({ children: [valueCell(bulletParagraphs(plan.homework), 80)] }),
-      new TableRow({ children: [new TableCell({
-        width: { size: 80, type: PCT }, margins: CELL_MARGIN,
-        children: [new Paragraph({ children: [run("课后小结")] })]
-      })] }),
       new TableRow({
-        children: [valueCell(
-          textParagraphs(plan.summary).concat([new Paragraph({ text: "" }), new Paragraph({ text: "" })]),
-          80
-        )]
+        children: [
+          simpleCell([new Paragraph({ children: [run("作业布置")] })], PROC_CONTENT_W),
+          emptyRemark([])
+        ]
+      }),
+      new TableRow({
+        children: [valueCell(bulletParagraphs(plan.homework), PROC_CONTENT_W), emptyRemark([])]
+      }),
+      new TableRow({
+        children: [
+          simpleCell([new Paragraph({ children: [run("课后小结")] })], PROC_CONTENT_W),
+          emptyRemark([])
+        ]
+      }),
+      new TableRow({
+        children: [
+          valueCell(
+            textParagraphs(plan.summary).concat([new Paragraph({ text: "" }), new Paragraph({ text: "" })]),
+            PROC_CONTENT_W
+          ),
+          emptyRemark([])
+        ]
       })
     ]
   }));
