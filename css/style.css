@@ -134,6 +134,75 @@ button, input, textarea, select {
   color: rgba(242,237,224,0.7);
 }
 
+/* ---------- 左栏：已打开教案的标签页 ---------- */
+
+.app-rail .rail-tabs {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  max-height: 32vh;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255,255,255,0.25) transparent;
+}
+
+.app-rail .rail-tabs-head {
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  color: rgba(242,237,224,0.4);
+  padding: 0 10px 6px;
+}
+
+.app-rail .rail-tab {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: rgba(242,237,224,0.85);
+  font-size: 13px;
+  line-height: 1.4;
+  padding: 7px 6px 7px 10px;
+  border-radius: var(--radius-s);
+  border-left: 3px solid transparent;
+  cursor: pointer;
+  transition: background .12s ease;
+}
+
+.app-rail .rail-tab:hover {
+  background: rgba(255,255,255,0.08);
+  color: #fff;
+}
+
+.app-rail .rail-tab.active {
+  background: rgba(255,255,255,0.1);
+  color: #fff;
+  border-left-color: var(--pencil-red);
+}
+
+.rail-tab-title {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.rail-tab-close {
+  flex-shrink: 0;
+  border: none;
+  background: transparent;
+  color: rgba(242,237,224,0.45);
+  cursor: pointer;
+  font-size: 11px;
+  line-height: 1;
+  padding: 3px 5px;
+  border-radius: 3px;
+}
+
+.rail-tab-close:hover {
+  color: #fff;
+  background: rgba(255,255,255,0.18);
+}
+
 .app-main {
   flex: 1;
   min-width: 0;
@@ -238,6 +307,15 @@ button, input, textarea, select {
   display: flex;
   flex-direction: column;
   gap: 8px;
+  cursor: pointer;
+  transition: border-color .12s ease, box-shadow .12s ease, transform .12s ease;
+}
+
+.plan-card:hover {
+  border-color: var(--ink-green-700);
+  border-left-color: var(--pencil-red);
+  box-shadow: 0 4px 14px rgba(43, 38, 32, 0.1);
+  transform: translateY(-2px);
 }
 
 .plan-card .plan-course {
@@ -365,8 +443,6 @@ input:focus, textarea:focus, select:focus {
 }
 .outline-row[data-level="2"] .level-tag { background: #6b7f5a; }
 .outline-row[data-level="3"] .level-tag { background: #9a8f6e; }
-.outline-row[data-level="2"] textarea,
-.outline-row[data-level="1"] textarea { }
 .outline-row[data-level="2"] { margin-left: 24px; }
 .outline-row[data-level="3"] { margin-left: 48px; }
 
@@ -529,6 +605,12 @@ input:focus, textarea:focus, select:focus {
   .app-rail { width: 100%; flex-direction: row; align-items: center; padding: 14px 18px; gap: 18px; }
   .app-rail .brand { border-bottom: none; padding-bottom: 0; }
   .app-rail nav { flex-direction: row; }
+  .app-rail .rail-tabs { flex-direction: row; align-items: center; max-height: none; overflow-y: hidden; overflow-x: auto; flex: 1; gap: 4px; min-width: 0; }
+  .app-rail .rail-tabs-head { display: none; }
+  .app-rail .rail-tab { border-left: none; border-bottom: 3px solid transparent; padding: 5px 8px; flex-shrink: 0; }
+  .app-rail .rail-tab.active { border-left-color: transparent; border-bottom-color: var(--pencil-red); }
+  .rail-tab-title { max-width: 120px; }
+  .app-rail .rail-foot { display: none; }
   .app-main { padding: 24px; }
   .field-grid { grid-template-columns: 1fr; }
 }

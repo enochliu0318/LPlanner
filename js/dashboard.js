@@ -1,4 +1,5 @@
-import { Storage } from "./storage.js";
+import { Storage } from "./storage.js?v=3";
+import { renderRailTabs } from "./tabs.js?v=3";
 
 const grid = document.getElementById("card-grid");
 const emptyState = document.getElementById("empty-state");
@@ -30,6 +31,9 @@ function render(keyword = "") {
           .some(v => v.toLowerCase().includes(kw))
       )
     : all;
+
+  // 左栏标签页（在列表页不高亮任何标签）
+  renderRailTabs(document.getElementById("rail-tabs"), { activeId: null });
 
   grid.innerHTML = "";
 
@@ -64,6 +68,12 @@ function render(keyword = "") {
         <button class="btn btn-sm btn-ghost btn-danger" data-act="del" data-id="${plan.id}">删除</button>
       </div>
     `;
+    // 点击卡片任意位置 → 直接进入该教案的编辑页
+    card.addEventListener("click", () => {
+      location.href = "editor.html?id=" + encodeURIComponent(plan.id);
+    });
+    // 按钮区域不触发卡片跳转，保证 复制 / 删除 / 编辑 按钮各自正常工作
+    card.querySelector(".plan-actions").addEventListener("click", (e) => e.stopPropagation());
     grid.appendChild(card);
   });
 }

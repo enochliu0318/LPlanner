@@ -1,5 +1,6 @@
-import { Storage } from "./storage.js?v=2";
-import { exportPlanToDocx } from "./docx-export.js?v=2";
+import { Storage } from "./storage.js?v=3";
+import { exportPlanToDocx } from "./docx-export.js?v=3";
+import { Tabs, NEW_TAB, renderRailTabs } from "./tabs.js?v=3";
 
 const params = new URLSearchParams(location.search);
 const existingId = params.get("id");
@@ -15,6 +16,11 @@ if (!plan) {
   plan = Storage.blankPlan();
   isNew = true;
 }
+
+// 左栏标签页：进入编辑页即注册为"已打开"，可随时从左栏切回
+const tabId = isNew ? NEW_TAB : plan.id;
+Tabs.open(tabId);
+Tabs.setActive(tabId);
 
 const $ = (sel) => document.querySelector(sel);
 const toast = $("#toast");
@@ -187,12 +193,17 @@ $("#save-btn").addEventListener("click", () => {
     alert("请至少填写“课题”后再保存。");
     return;
   }
+  const wasNew = isNew;
   Storage.save(plan);
   isNew = false;
   dirty = false;
   const url = new URL(location.href);
   url.searchParams.set("id", plan.id);
   history.replaceState(null, "", url);
+  // 标签页同步：新教案保存后把「新建」占位标签换成真实教案
+  if (wasNew) Tabs.replace(NEW_TAB, plan.id);
+  Tabs.setActive(plan.id);
+  renderRailTabs($("#rail-tabs"), { activeId: plan.id });
   $("#save-status").textContent = "已保存 · " + new Date().toLocaleTimeString("zh-CN");
   updatePageTitle();
   showToast("教案已保存");
@@ -200,11 +211,13 @@ $("#save-btn").addEventListener("click", () => {
 
 $("#delete-btn").addEventListener("click", () => {
   if (isNew) {
+    Tabs.close(NEW_TAB);
     location.href = "index.html";
     return;
   }
   if (confirm("确定要删除这份教案吗？此操作无法撤销。")) {
     Storage.remove(plan.id);
+    Tabs.close(plan.id);
     location.href = "index.html";
   }
 });
@@ -307,3 +320,4 @@ function nl2br(s) { return escapeHtml(s).replace(/\n/g, "<br/>"); }
 /* ---------------- 初始化 ---------------- */
 
 fillFormFromPlan();
+renderRailTabs($("#rail-tabs"), { activeId: tabId });
