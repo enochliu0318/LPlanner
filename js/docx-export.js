@@ -7,6 +7,8 @@
    讲稿部分大表（左宽栏圆点讲稿 + 右侧贯通的备注列）。
    ============================================================ */
 
+import { buildDocumentModel } from "./document-model.js?v=8";
+
 const DOCX_CDN = "https://unpkg.com/docx@8.5.0/build/index.umd.js";
 const DOCX_CDN_FALLBACK = "https://cdn.jsdelivr.net/npm/docx@8.5.0/build/index.umd.js";
 const FILESAVER_CDN = "https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js";
@@ -53,6 +55,9 @@ export async function exportPlanToDocx(plan) {
   const { Document, Paragraph, TextRun, Table, TableRow, TableCell, WidthType,
           AlignmentType, VerticalAlign, ShadingType, TableLayoutType, Packer } = docx;
 
+  // 使用共享文档模型，确保与 PDF 打印 1:1 一致
+  const doc = buildDocumentModel(plan);
+
   const PCT = WidthType.PERCENTAGE;
   const DXA = WidthType.DXA;
   // A4 宽 11906，减左右 2cm(1134+1134) 后正文可用宽 9638 twips
@@ -79,8 +84,7 @@ export async function exportPlanToDocx(plan) {
   };
 
   /** 作业布置等条目 → 「• 内容」悬挂缩进段落 */
-  const bulletParagraphs = (text) => {
-    const lines = String(text ?? "").split("\n").map(s => s.trim()).filter(Boolean);
+  const bulletParagraphs = (lines) => {
     if (!lines.length) return textParagraphs("");
     return lines.map(line => new Paragraph({
       indent: { left: 320, hanging: 240 },
@@ -89,79 +93,26 @@ export async function exportPlanToDocx(plan) {
     }));
   };
 
-  /** 讲稿大纲 → 解析富文本 HTML（嵌套 ul/li）为带圆点、缩进和字型的段落 */
+  /** 讲稿大纲 → 使用共享模型的 contentLines（与 PDF 编号一致） */
   const outlineParagraphs = () => {
-    const html = plan.contentHtml || "";
-    if (!html.trim()) return textParagraphs("（暂无内容）");
-    const container = document.createElement("div");
-    container.innerHTML = html;
-
-    // 没有列表结构时（纯文本/纯段落），按整块文本处理
-    if (!container.querySelector("ul,ol")) {
-      return textParagraphs(container.innerText || container.textContent || "（暂无内容）");
-    }
-
-    const paras = [];
-    // 收集 li 内的内联格式（跳过嵌套列表）；一级条目整行加粗，与模板一致
-    const collectRuns = (node, fmt, runs) => {
-      node.childNodes.forEach(n => {
-        if (n.nodeType === Node.TEXT_NODE) {
-          const t = n.textContent;
-          if (t) {
-            const o = {};
-            if (fmt.b) o.bold = true;
-            if (fmt.i) o.italics = true;
-            if (fmt.u) o.underline = {};
-            runs.push(run(t, o));
-          }
-        } else if (n.nodeType === Node.ELEMENT_NODE) {
-          const tag = n.tagName;
-          if (tag === "UL" || tag === "OL" || tag === "BR") return;
-          collectRuns(n, {
-            b: fmt.b || tag === "B" || tag === "STRONG",
-            i: fmt.i || tag === "I" || tag === "EM",
-            u: fmt.u || tag === "U"
-          }, runs);
-        }
+    if (!doc.contentLines.length) return textParagraphs("（暂无内容）");
+    return doc.contentLines.map(item => {
+      const prefix = item.depth === 1
+        ? run(item.text.split("、")[0] + "、", { bold: true })
+        : run(BULLET[item.depth] || "• ");
+      const text = item.depth === 1 ? item.text.split("、").slice(1).join("、").trim() : item.text;
+      return new Paragraph({
+        indent: { left: (item.depth - 1) * 360 + 280, hanging: 240 },
+        spacing: { line: 320, after: 40 },
+        children: [prefix, run(text || " ")]
       });
-    };
-
-    const CN = ["一", "二", "三", "四", "五", "六", "七", "八", "九", "十"];
-    let topIndex = 0;
-    const walkList = (list, depth) => {
-      Array.from(list.children).forEach(el => {
-        // 兼容浏览器两种输出：<ul> 嵌在 <li> 内，或直接并列在上级 <ul> 下
-        if (el.tagName === "UL" || el.tagName === "OL") { walkList(el, depth + 1); return; }
-        if (el.tagName !== "LI") return;
-        const runs = [];
-        collectRuns(el, { b: depth === 1, i: false, u: false }, runs);
-        let prefix;
-        if (depth === 1) {
-          const n = CN[topIndex] || (topIndex + 1);
-          prefix = run(n + "、", { bold: true });
-          topIndex++;
-        } else {
-          prefix = run(BULLET[depth] || "• ", { bold: false });
-        }
-        paras.push(new Paragraph({
-          indent: { left: (depth - 1) * 360 + 280, hanging: 240 },
-          spacing: { line: 320, after: 40 },
-          children: [prefix].concat(runs.length ? runs : [run(" ")])
-        }));
-        Array.from(el.children).forEach(child => {
-          if (child.tagName === "UL" || child.tagName === "OL") walkList(child, depth + 1);
-        });
-      });
-    };
-
-    Array.from(container.children).forEach(el => {
-      if (el.tagName === "UL" || el.tagName === "OL") walkList(el, 1);
-      else {
-        const text = el.textContent || "";
-        if (text.trim()) paras.push(new Paragraph({ spacing: { line: 320 }, children: [run(text)] }));
-      }
     });
-    return paras.length ? paras : textParagraphs("（暂无内容）");
+  };
+
+  /** 标签格式化：短标签加全角空格对齐（如"课题"→"课　题"） */
+  const formatLabel = (label) => {
+    const map = { "课题": "课　题", "学时": "学　时", "重点": "重　点", "难点": "难　点" };
+    return map[label] || label;
   };
 
   /** 表格标签单元格（居中，模板中不加粗） */
@@ -171,7 +122,7 @@ export async function exportPlanToDocx(plan) {
     margins: CELL_MARGIN,
     children: [new Paragraph({
       alignment: AlignmentType.CENTER,
-      children: [run(text)]
+      children: [run(formatLabel(text))]
     })]
   });
 
@@ -210,8 +161,6 @@ export async function exportPlanToDocx(plan) {
     ]
   });
 
-  const refRows = (plan.references || []).filter(r => r.label || r.url);
-
   const children = [];
 
   // 大标题
@@ -221,41 +170,27 @@ export async function exportPlanToDocx(plan) {
     children: [run("授  课  教  案", { bold: true, size: 72 })]
   }));
 
-  // 信息行
-  children.push(infoLine("课程名称：", plan.courseName));
-  children.push(infoLine("课程类别：", plan.courseCategory));
-  children.push(infoLine("任课教师：", plan.teacher));
-  children.push(infoLine("任课时间：", plan.teachDate));
+  // 信息行（使用共享模型）
+  doc.info.forEach(i => children.push(infoLine(i.label, i.value)));
 
-  // 教案部分
-  children.push(banner("教案部分：每 1 学时/60 分钟一个教案"));
+  // 教案部分（使用共享模型）
+  children.push(banner(doc.lessonPlanBanner));
   children.push(new Table({
     width: { size: PAGE_W, type: DXA },
     layout: TableLayoutType.FIXED,
     columnWidths: [INFO_LABEL_W, INFO_VALUE_W],
-    rows: [
-      new TableRow({ children: [labelCell("课　　题", INFO_LABEL_W), valueCell(textParagraphs(plan.lessonTitle), INFO_VALUE_W)] }),
-      new TableRow({ children: [labelCell("学　　时", INFO_LABEL_W), valueCell(textParagraphs(String(plan.hours ?? "")), INFO_VALUE_W)] }),
-      new TableRow({ children: [labelCell("教学目标与要求", INFO_LABEL_W), valueCell(textParagraphs(plan.objectives), INFO_VALUE_W)] }),
-      new TableRow({ children: [labelCell("重　　点", INFO_LABEL_W), valueCell(textParagraphs(plan.keyPoints), INFO_VALUE_W)] }),
-      new TableRow({ children: [labelCell("难　　点", INFO_LABEL_W), valueCell(textParagraphs(plan.difficultPoints), INFO_VALUE_W)] }),
-      new TableRow({ children: [labelCell("教学方法与手段", INFO_LABEL_W), valueCell(textParagraphs(plan.methods), INFO_VALUE_W)] }),
+    rows: doc.lessonPlanRows.map(r =>
       new TableRow({
         children: [
-          labelCell("参考资料", INFO_LABEL_W),
-          valueCell(
-            refRows.length
-              ? refRows.flatMap(r => textParagraphs(`${r.label || "资料"}：${r.url || ""}`))
-              : textParagraphs(""),
-            INFO_VALUE_W
-          )
+          labelCell(r.label, INFO_LABEL_W),
+          valueCell(textParagraphs(r.value), INFO_VALUE_W)
         ]
       })
-    ]
+    )
   }));
 
-  // 讲稿部分（另起一页）
-  children.push(banner("讲稿部分（教学内容及过程）每课次连续完整，任课教师应逐课次完整填写讲稿", true));
+  // 讲稿部分（另起一页，使用共享模型）
+  children.push(banner(doc.lectureBanner, true));
   const emptyRemark = parts => simpleCell(parts, PROC_REMARK_W);
   children.push(new Table({
     width: { size: PAGE_W, type: DXA },
@@ -287,7 +222,7 @@ export async function exportPlanToDocx(plan) {
       new TableRow({
         children: [
           valueCell(outlineParagraphs(), PROC_CONTENT_W),
-          valueCell(textParagraphs(plan.remarks), PROC_REMARK_W)
+          valueCell(textParagraphs(doc.remarks), PROC_REMARK_W)
         ]
       }),
       new TableRow({
@@ -297,7 +232,7 @@ export async function exportPlanToDocx(plan) {
         ]
       }),
       new TableRow({
-        children: [valueCell(bulletParagraphs(plan.homework), PROC_CONTENT_W), emptyRemark([])]
+        children: [valueCell(bulletParagraphs(doc.homework), PROC_CONTENT_W), emptyRemark([])]
       }),
       new TableRow({
         children: [
@@ -308,7 +243,7 @@ export async function exportPlanToDocx(plan) {
       new TableRow({
         children: [
           valueCell(
-            textParagraphs(plan.summary).concat([new Paragraph({ text: "" }), new Paragraph({ text: "" })]),
+            textParagraphs(doc.summary).concat([new Paragraph({ text: "" }), new Paragraph({ text: "" })]),
             PROC_CONTENT_W
           ),
           emptyRemark([])
@@ -335,6 +270,6 @@ export async function exportPlanToDocx(plan) {
   });
 
   const blob = await Packer.toBlob(doc);
-  const fileName = `${(plan.lessonTitle || "教案").replace(/[\\/:*?"<>|]/g, "")}.docx`;
+  const fileName = `${(doc.lessonPlanRows[0].value || "教案").replace(/[\\/:*?"<>|]/g, "")}.docx`;
   window.saveAs(blob, fileName);
 }

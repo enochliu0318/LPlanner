@@ -1,6 +1,7 @@
-import { Storage } from "./storage.js?v=7";
-import { exportPlanToDocx } from "./docx-export.js?v=7";
-import { Tabs, NEW_TAB, renderRailTabs } from "./tabs.js?v=7";
+import { Storage } from "./storage.js?v=8";
+import { exportPlanToDocx } from "./docx-export.js?v=8";
+import { Tabs, NEW_TAB, renderRailTabs } from "./tabs.js?v=8";
+import { buildDocumentModel } from "./document-model.js?v=8";
 
 const params = new URLSearchParams(location.search);
 const existingId = params.get("id");
@@ -221,69 +222,42 @@ $("#export-pdf-btn").addEventListener("click", () => {
   setTimeout(restore, 4000);
 });
 
-/** 讲稿内容：一级条目改用中文数字编号（一、二、三…），与模板一致 */
-function addChineseNumbering(html) {
-  if (!html.trim()) return html;
-  const container = document.createElement("div");
-  container.innerHTML = html;
-  const CN = ["一", "二", "三", "四", "五", "六", "七", "八", "九", "十"];
-  const topLis = container.querySelectorAll(":scope > ul > li");
-  topLis.forEach((li, i) => {
-    const span = document.createElement("span");
-    span.className = "cn-num";
-    span.textContent = (CN[i] || (i + 1)) + "、";
-    li.insertBefore(span, li.firstChild);
-  });
-  return container.innerHTML;
-}
-
-/** 作业/多条目内容 → 带圆点的段落 */
-function buildBulletLines(text) {
-  const lines = String(text || "").split("\n").map(s => s.trim()).filter(Boolean);
-  return lines.map(l => `<div class="doc-bullet">• ${escapeHtml(l)}</div>`).join("");
-}
-
 function buildPrintView(p) {
+  const doc = buildDocumentModel(p);
   const root = $("#print-root");
-  const refRows = (p.references || []).filter(r => r.label || r.url);
-  const refHtml = refRows
-    .map(r => `${escapeHtml(r.label || "资料")}${r.url ? "：" + escapeHtml(r.url) : ""}`)
-    .join("<br/>");
+
+  const infoHtml = doc.info.map(i =>
+    `<p><span class="doc-label">${escapeHtml(i.label)}</span><span class="doc-value">${escapeHtml(i.value)}</span></p>`
+  ).join("");
+
+  const formatLabel = (label) => {
+    const map = { "课题": "课&emsp;题", "学时": "学&emsp;时", "重点": "重&emsp;点", "难点": "难&emsp;点" };
+    return map[label] || escapeHtml(label);
+  };
+  const lessonRowsHtml = doc.lessonPlanRows.map(r =>
+    `<tr><th>${formatLabel(r.label)}</th><td class="doc-multiline">${nl2br(r.value)}</td></tr>`
+  ).join("");
+
+  const homeworkHtml = doc.homework.map(l =>
+    `<div class="doc-bullet">• ${escapeHtml(l)}</div>`
+  ).join("");
 
   root.innerHTML = `
     <h1 class="doc-title">授&nbsp;课&nbsp;教&nbsp;案</h1>
-
-    <div class="doc-info">
-      <p><span class="doc-label">课程名称：</span><span class="doc-value">${escapeHtml(p.courseName)}</span></p>
-      <p><span class="doc-label">课程类别：</span><span class="doc-value">${escapeHtml(p.courseCategory)}</span></p>
-      <p><span class="doc-label">任课教师：</span><span class="doc-value">${escapeHtml(p.teacher)}</span></p>
-      <p><span class="doc-label">任课时间：</span><span class="doc-value">${escapeHtml(p.teachDate)}</span></p>
-    </div>
-
-    <div class="doc-banner">●&ensp;教案部分：每 1 学时/60 分钟一个教案</div>
-
-    <table class="doc-table">
-      <tr><th>课&emsp;&emsp;题</th><td>${escapeHtml(p.lessonTitle)}</td></tr>
-      <tr><th>学&emsp;&emsp;时</th><td>${escapeHtml(String(p.hours || ""))}</td></tr>
-      <tr><th>教学目标<br/>与要求</th><td class="doc-multiline">${nl2br(p.objectives)}</td></tr>
-      <tr><th>重&emsp;&emsp;点</th><td class="doc-multiline">${nl2br(p.keyPoints)}</td></tr>
-      <tr><th>难&emsp;&emsp;点</th><td class="doc-multiline">${nl2br(p.difficultPoints)}</td></tr>
-      <tr><th>教学方法<br/>与手段</th><td class="doc-multiline">${nl2br(p.methods)}</td></tr>
-      <tr><th>参考资料</th><td class="doc-multiline">${refHtml}</td></tr>
-    </table>
-
-    <div class="doc-banner page-break">●&ensp;讲稿部分（教学内容及过程）每课次连续完整，任课教师应逐课次完整填写讲稿</div>
-
+    <div class="doc-info">${infoHtml}</div>
+    <div class="doc-banner">●&ensp;${escapeHtml(doc.lessonPlanBanner)}</div>
+    <table class="doc-table">${lessonRowsHtml}</table>
+    <div class="doc-banner page-break">●&ensp;${escapeHtml(doc.lectureBanner)}</div>
     <table class="doc-table doc-process">
       <tr><th class="doc-process-head">教学内容及过程</th><th class="doc-process-remarks-head">备注</th></tr>
       <tr>
-        <td class="doc-process-content doc-multiline">${addChineseNumbering(plan.contentHtml || "")}</td>
-        <td class="doc-process-remarks doc-multiline">${nl2br(p.remarks)}</td>
+        <td class="doc-process-content doc-multiline">${doc.contentNumberedHtml}</td>
+        <td class="doc-process-remarks doc-multiline">${nl2br(doc.remarks)}</td>
       </tr>
       <tr><td class="doc-row-label">作业布置</td><td class="doc-process-remarks"></td></tr>
-      <tr><td class="doc-multiline">${buildBulletLines(p.homework)}</td><td class="doc-process-remarks"></td></tr>
+      <tr><td class="doc-multiline">${homeworkHtml}</td><td class="doc-process-remarks"></td></tr>
       <tr><td class="doc-row-label">课后小结</td><td class="doc-process-remarks"></td></tr>
-      <tr><td class="doc-tall doc-multiline">${nl2br(p.summary)}</td><td class="doc-process-remarks"></td></tr>
+      <tr><td class="doc-tall doc-multiline">${nl2br(doc.summary)}</td><td class="doc-process-remarks"></td></tr>
     </table>
   `;
 }
