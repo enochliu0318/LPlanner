@@ -631,7 +631,7 @@ input:focus, textarea:focus, select:focus {
     margin-bottom: 12pt;
   }
   table.doc-table th, table.doc-table td {
-    border: 0.5pt solid #000;
+    border: 0.3pt solid #000;
     padding: 6pt 8pt;
     vertical-align: top;
     text-align: left;
@@ -639,7 +639,7 @@ input:focus, textarea:focus, select:focus {
   }
   table.doc-table th {
     width: 15%;
-    font-weight: 400;
+    font-weight: 700;
     text-align: center;
     vertical-align: middle;
   }
@@ -736,7 +736,7 @@ body.pdf-capture table.doc-table {
 }
 body.pdf-capture table.doc-table th,
 body.pdf-capture table.doc-table td {
-  border: 0.5pt solid #000;
+  border: 0.3pt solid #000;
   padding: 6pt 8pt;
   vertical-align: top;
   text-align: left;
@@ -744,7 +744,7 @@ body.pdf-capture table.doc-table td {
 }
 body.pdf-capture table.doc-table th {
   width: 15%;
-  font-weight: 400;
+  font-weight: 700;
   text-align: center;
   vertical-align: middle;
 }

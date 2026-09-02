@@ -4,8 +4,6 @@
    确保两个输出 1:1 一致。
    ============================================================ */
 
-const CN_NUM = ["一", "二", "三", "四", "五", "六", "七", "八", "九", "十"];
-
 /** 多行文本 → 数组（保留换行） */
 function splitLines(text) {
   return String(text ?? "").split("\n").map(s => s.trim()).filter(Boolean);
@@ -17,22 +15,13 @@ function buildRefText(references) {
   return rows.map(r => `${r.label || "资料"}${r.url ? "：" + r.url : ""}`).join("\n");
 }
 
-/** 讲稿内容：一级条目加中文数字编号（一、二、三…）的 HTML */
+/** 讲稿内容：保留原始 HTML，不加中文数字编号 */
 function contentWithNumbering(html) {
   if (!html || !html.trim()) return "";
-  const container = document.createElement("div");
-  container.innerHTML = html;
-  const topLis = container.querySelectorAll(":scope > ul > li");
-  topLis.forEach((li, i) => {
-    const span = document.createElement("span");
-    span.className = "cn-num";
-    span.textContent = (CN_NUM[i] || (i + 1)) + "、";
-    li.insertBefore(span, li.firstChild);
-  });
-  return container.innerHTML;
+  return html;
 }
 
-/** 讲稿内容：一级条目加中文数字编号的纯文本行（用于 Word） */
+/** 讲稿内容：一级条目纯文本行（用于 Word，不加中文数字编号） */
 function contentNumberedPlainLines(html) {
   if (!html || !html.trim()) return [];
   const container = document.createElement("div");
@@ -42,7 +31,7 @@ function contentNumberedPlainLines(html) {
   topLis.forEach((li, i) => {
     const text = li.textContent.trim();
     if (text) {
-      lines.push({ depth: 1, text: (CN_NUM[i] || (i + 1)) + "、" + text });
+      lines.push({ depth: 1, text: text });
     }
     // 子级条目
     const subUls = li.querySelectorAll(":scope > ul > li");
