@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>备课本 · 我的教案</title>
+<link rel="stylesheet" href="css/style.css?v=2" />
+</head>
+<body>
+<div class="app-shell">
+
+  <aside class="app-rail">
+    <div class="brand">备课本
+      <small>Lesson Notebook</small>
+    </div>
+    <nav>
+      <a href="index.html" class="active">我的教案</a>
+      <a href="editor.html">＋ 新建教案</a>
+    </nav>
+    <div class="rail-foot">
+      <span class="rail-foot-text">教学相长，念念不忘，必有回响。</span>
+    </div>
+  </aside>
+
+  <main class="app-main">
+    <div class="page-head">
+      <div>
+        <h1>我的教案</h1>
+        <p>按课程、课题或教师姓名搜索，点击卡片进行编辑、导出。</p>
+      </div>
+      <div class="toolbar">
+        <button class="btn" id="import-backup-btn">导入备份</button>
+        <button class="btn" id="export-backup-btn">导出备份</button>
+        <a class="btn btn-accent" href="editor.html">＋ 新建教案</a>
+      </div>
+      <input type="file" id="import-file-input" accept="application/json" style="display:none" />
+    </div>
+
+    <div class="search-row">
+      <input type="search" id="search-input" placeholder="搜索课程名称 / 课题 / 教师..." />
+    </div>
+
+    <div class="card-grid" id="card-grid"></div>
+
+    <div class="empty-state" id="empty-state" style="display:none">
+      <h2>还没有教案</h2>
+      <p>点击右上角"新建教案"，参照模板快速填写第一份教案吧。</p>
+    </div>
+  </main>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script type="module" src="js/dashboard.js?v=2"></script>
+</body>
+</html>
