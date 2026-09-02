@@ -70,7 +70,7 @@ export function buildDocumentModel(plan) {
       { label: "任课教师：", value: plan.teacher },
       { label: "任课时间：", value: plan.teachDate },
     ],
-    lessonPlanBanner: "教案部分：每 1 学时/60 分钟一个教案",
+    lessonPlanBanner: "教案部分",
     lessonPlanRows: [
       { label: "课题", value: plan.lessonTitle },
       { label: "学时", value: String(plan.hours || "") },
@@ -80,7 +80,7 @@ export function buildDocumentModel(plan) {
       { label: "教学方法与手段", value: plan.methods },
       { label: "参考资料", value: buildRefText(plan.references) },
     ],
-    lectureBanner: "讲稿部分（教学内容及过程）每课次连续完整，任课教师应逐课次完整填写讲稿",
+    lectureBanner: "讲稿部分",
     contentHtml: plan.contentHtml || "",
     contentNumberedHtml: contentWithNumbering(plan.contentHtml || ""),
     contentLines: contentNumberedPlainLines(plan.contentHtml || ""),

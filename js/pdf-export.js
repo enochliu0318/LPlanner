@@ -52,13 +52,18 @@ export async function exportPlanToPdf(plan, buildPrintHtml) {
   await new Promise(r => setTimeout(r, 200));
 
   // 使用 html2canvas 捕获打印视图
+  // scale: 4 提供 4x 超采样，文字边缘更锐利，打印级清晰度
   const canvas = await window.html2canvas(root, {
-    scale: 2, // 2x 缩放以获得更高清晰度
+    scale: 4,
     useCORS: true,
     logging: false,
     backgroundColor: "#ffffff",
     windowWidth: root.scrollWidth,
     windowHeight: root.scrollHeight,
+    letterRendering: true,      // 优化文字渲染
+    allowTaint: true,           // 允许跨域图像
+    removeContainer: true,      // 捕获后清理临时容器
+    foreignObjectRendering: false, // 禁用 foreignObject 以避免渲染问题
   });
 
   // 移除 .pdf-capture 类
