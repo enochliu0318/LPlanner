@@ -537,65 +537,94 @@ input:focus, textarea:focus, select:focus {
 
   @page {
     size: A4;
-    margin: 18mm 16mm;
+    margin: 20mm 18mm;
   }
 
   body {
     background: #fff;
     font-family: "Songti SC", "SimSun", "Times New Roman", serif;
-    font-size: 12pt;
-    line-height: 1.7;
+    font-size: 11pt;
+    line-height: 1.6;
     color: #000;
   }
 
   /* 居中大标题 */
   .doc-title {
     text-align: center;
-    font-size: 20pt;
+    font-size: 30pt;
     font-weight: 700;
-    letter-spacing: 0.15em;
-    margin: 0 0 18pt;
+    letter-spacing: 0.25em;
+    margin: 28pt 0 34pt;
     color: #000;
   }
 
-  /* 教案表格：细黑线、表头灰底 */
+  /* 标题下信息行：标签 + 加粗下划线的值 */
+  .doc-info { margin: 0 0 8pt 4em; }
+  .doc-info p { margin: 0 0 10pt; font-size: 13pt; }
+  .doc-info .doc-label { display: inline-block; min-width: 5.5em; }
+  .doc-info .doc-value {
+    font-weight: 700;
+    text-decoration: underline;
+    text-underline-offset: 3pt;
+    text-decoration-thickness: 1pt;
+  }
+
+  /* 灰色斜纹横幅条 */
+  .doc-banner {
+    border: 1px solid #aaa;
+    background: repeating-linear-gradient(45deg, #ececec 0 5px, #fafafa 5px 10px);
+    padding: 3pt 8pt;
+    font-size: 10.5pt;
+    margin: 14pt 0 10pt;
+    page-break-after: avoid;
+  }
+  .doc-banner.page-break {
+    page-break-before: always;
+    margin-top: 0;
+  }
+
+  /* 教案表格：黑色细线 */
   table.doc-table {
     width: 100%;
     border-collapse: collapse;
-    margin-bottom: 10pt;
+    margin-bottom: 12pt;
   }
   table.doc-table th, table.doc-table td {
-    border: 0.75pt solid #444;
-    padding: 5pt 8pt;
-    vertical-align: middle;
+    border: 1px solid #000;
+    padding: 6pt 8pt;
+    vertical-align: top;
     text-align: left;
-    word-break: break-all;
+    word-break: break-word;
   }
   table.doc-table th {
-    width: 16%;
-    background: #f2f2f2;
-    font-weight: 600;
+    width: 15%;
+    font-weight: 400;
     text-align: center;
     vertical-align: middle;
   }
-  /* 多行文本单元格：空内容时保留最小高度，便于打印后手写 */
-  table.doc-table td.doc-multiline { min-height: 24pt; }
+  tr { page-break-inside: avoid; }
 
-  /* 教学内容及过程的中文层级缩进 */
-  table.doc-table .lvl-1 { font-weight: 600; margin: 2pt 0; }
-  table.doc-table .lvl-1:first-child { margin-top: 0; }
-  table.doc-table .lvl-2 { margin: 2pt 0 2pt 2em; }
-  table.doc-table .lvl-3 { margin: 2pt 0 2pt 4em; }
+  /* 空内容单元格保留最小高度，便于打印后手写 */
+  table.doc-table td.doc-multiline { min-height: 26pt; }
 
-  /* 右下角签名栏 */
-  .doc-sign {
-    display: flex;
-    justify-content: flex-end;
-    gap: 3em;
-    margin-top: 14pt;
-    font-size: 11pt;
-    color: #000;
+  /* 讲稿部分大表 */
+  table.doc-table th.doc-process-head {
+    width: auto;
+    text-align: center;
+    font-size: 14pt;
+    letter-spacing: 0.2em;
+    padding: 8pt;
   }
+  td.doc-process-content { width: 78%; }
+  td.doc-process-remarks { width: 22%; }
+  td.doc-row-label { letter-spacing: 0.1em; }
+  td.doc-tall { height: 80pt; }
+
+  /* 多级讲稿列表：与模板一致的圆点 + 悬挂缩进 */
+  table.doc-table .lvl-1 { padding-left: 1.6em; text-indent: -1.3em; margin: 3pt 0; font-weight: 700; }
+  table.doc-table .lvl-2 { padding-left: 3.4em; text-indent: -1.3em; margin: 3pt 0; }
+  table.doc-table .lvl-3 { padding-left: 5.2em; text-indent: -1.3em; margin: 3pt 0; }
+  table.doc-table .doc-bullet { padding-left: 1.6em; text-indent: -1.3em; margin: 2pt 0; }
 }
 
 /* ---------- 响应式 ---------- */

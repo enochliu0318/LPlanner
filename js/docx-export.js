@@ -2,8 +2,9 @@
    docx-export.js
    使用开源库 docx（https://github.com/dolanmiu/docx）在浏览器端
    生成 .docx 文件，通过 CDN 按需加载，不需要任何服务器或付费 API。
-   排版目标：标准《授课教案》表格版式 —— A4 页面、宋体正文、
-   细线表格、中文层级编号（一、/ 1. /（1）），与打印视图保持一致。
+   排版目标：1:1 复刻「长江大学教案模板」——大标题 + 加粗下划线
+   信息行 + 灰底横幅 + 教案部分表格（含重点/难点/教学方法）+
+   讲稿部分大表（左宽栏圆点讲稿 + 右侧贯通的备注列）。
    ============================================================ */
 
 const DOCX_CDN = "https://unpkg.com/docx@8.5.0/build/index.umd.js";
@@ -43,168 +44,188 @@ async function ensureLibs() {
   if (!window.saveAs) await loadScript(FILESAVER_CDN);
 }
 
-/** 中文序号（一、二、三……），超出后回退为阿拉伯数字 */
-const CN_NUM = ["一", "二", "三", "四", "五", "六", "七", "八", "九", "十", "十一", "十二", "十三", "十四", "十五"];
-
-/** 把 yyyy-mm-dd 格式化为「yyyy 年 m 月 d 日」 */
-function fmtCnDate(iso) {
-  if (!iso) return "";
-  const d = new Date(iso + "T00:00:00");
-  if (isNaN(d)) return iso;
-  return `${d.getFullYear()} 年 ${d.getMonth() + 1} 月 ${d.getDate()} 日`;
-}
+/** 多级讲稿的圆点符号（与模板一致） */
+const BULLET = { 1: "• ", 2: "◦ ", 3: "▪ " };
 
 export async function exportPlanToDocx(plan) {
   await ensureLibs();
   const docx = window.docx;
   const { Document, Paragraph, TextRun, Table, TableRow, TableCell, WidthType,
-          AlignmentType, VerticalAlign, Packer } = docx;
+          AlignmentType, VerticalAlign, ShadingType, Packer } = docx;
 
   const PCT = WidthType.PERCENTAGE;
-  // 中文文档经典搭配：西文 Times New Roman + 中文宋体；正文 12pt（size 单位为半磅）
+  // 中文文档经典搭配：西文 Times New Roman + 中文宋体；正文 11pt（size 单位为半磅）
   const FONT = { ascii: "Times New Roman", hAnsi: "Times New Roman", eastAsia: "宋体" };
-  const CELL_MARGIN = { top: 80, bottom: 80, left: 140, right: 140 };
+  const CELL_MARGIN = { top: 60, bottom: 60, left: 140, right: 140 };
 
   const run = (text, opts = {}) =>
-    new TextRun({ text: text ?? "", font: FONT, size: 24, ...opts });
+    new TextRun({ text: text ?? "", font: FONT, size: 22, ...opts });
 
   /** 多行文本 → 段落数组（保留换行） */
   const textParagraphs = (text, opts = {}) => {
     const lines = String(text ?? "").split("\n");
     const safe = lines.some(l => l.trim()) ? lines : [""];
     return safe.map(line => new Paragraph({
-      spacing: { line: 340 },
+      spacing: { line: 320 },
       children: [run(line, opts)]
     }));
   };
 
-  /** 表头单元格（灰底、加粗、居中） */
+  /** 作业布置等条目 → 「• 内容」悬挂缩进段落 */
+  const bulletParagraphs = (text) => {
+    const lines = String(text ?? "").split("\n").map(s => s.trim()).filter(Boolean);
+    if (!lines.length) return textParagraphs("");
+    return lines.map(line => new Paragraph({
+      indent: { left: 320, hanging: 240 },
+      spacing: { line: 320, after: 40 },
+      children: [run("• " + line)]
+    }));
+  };
+
+  /** 讲稿大纲 → 圆点层级段落（一级加粗） */
+  const outlineParagraphs = () => {
+    const blocks = (plan.content || []).filter(b => b.text);
+    if (!blocks.length) return textParagraphs("（暂无内容）");
+    return blocks.map(b => {
+      const level = Math.min(Math.max(b.level || 1, 1), 3);
+      return new Paragraph({
+        indent: { left: (level - 1) * 360 + 280, hanging: 240 },
+        spacing: { line: 320, after: 40 },
+        children: [run((BULLET[level] || "• ") + b.text, { bold: level === 1 })]
+      });
+    });
+  };
+
+  /** 表格标签单元格（居中，模板中不加粗） */
   const labelCell = (text, widthPct) => new TableCell({
     width: { size: widthPct, type: PCT },
-    shading: { fill: "F5F5F5" },
     verticalAlign: VerticalAlign.CENTER,
     margins: CELL_MARGIN,
     children: [new Paragraph({
       alignment: AlignmentType.CENTER,
-      children: [run(text, { bold: true })]
+      children: [run(text)]
     })]
   });
 
-  /** 内容单元格（可跨列），内容为段落数组 */
-  const valueCell = (paragraphs, widthPct, span) => new TableCell({
-    columnSpan: span,
+  /** 内容单元格（可跨列/跨行） */
+  const valueCell = (paragraphs, widthPct, opts = {}) => new TableCell({
+    columnSpan: opts.span,
+    rowSpan: opts.rowSpan,
     width: { size: widthPct, type: PCT },
-    verticalAlign: VerticalAlign.CENTER,
+    verticalAlign: VerticalAlign.TOP,
     margins: CELL_MARGIN,
     children: paragraphs
   });
 
-  /** 四列行：label | value | label | value */
-  const row4 = (l1, v1, l2, v2) => new TableRow({
+  /** 灰底横幅段落（模拟模板的斜纹分隔条） */
+  const banner = (text, breakBefore) => new Paragraph({
+    shading: { type: ShadingType.CLEAR, fill: "ECECEC" },
+    pageBreakBefore: !!breakBefore,
+    spacing: { before: 200, after: 200 },
+    children: [run("● " + text, { size: 21 })]
+  });
+
+  /** 标题下的信息行：标签 + 加粗下划线的值 */
+  const infoLine = (label, value) => new Paragraph({
+    indent: { left: 1440 },
+    spacing: { after: 240 },
     children: [
-      labelCell(l1, 14),
-      valueCell(textParagraphs(v1), 36),
-      labelCell(l2, 14),
-      valueCell(textParagraphs(v2), 36)
+      run(label, { size: 28 }),
+      run(value || "", { bold: true, size: 28, underline: {} })
     ]
   });
 
-  /** 两列行：label | value（跨 3 列） */
-  const row2 = (l, v) => new TableRow({
-    children: [labelCell(l, 14), valueCell(textParagraphs(v), 86, 3)]
-  });
-
-  /**
-   * 多级内容 → 带中文层级编号与缩进的段落。
-   * 一级「一、」加粗顶格；二级「1.」缩进；三级「（1）」再缩进。
-   * 高一级出现时，低一级序号归零。
-   */
-  const outlineParagraphs = () => {
-    const blocks = (plan.content || []).filter(b => b.text);
-    let c1 = 0, c2 = 0, c3 = 0;
-    const paras = [];
-    blocks.forEach(b => {
-      const level = b.level || 1;
-      let label;
-      if (level === 2) { c2++; c3 = 0; label = `${c2}. `; }
-      else if (level === 3) { c3++; label = `（${c3}）`; }
-      else { c1++; c2 = 0; c3 = 0; label = `${CN_NUM[c1 - 1] || c1}、`; }
-      paras.push(new Paragraph({
-        indent: { left: (level - 1) * 480 },
-        spacing: { line: 340, after: 60 },
-        children: [run(label + b.text, { bold: level === 1 })]
-      }));
-    });
-    if (paras.length === 0) {
-      paras.push(new Paragraph({ children: [run("（暂无内容）")] }));
-    }
-    return paras;
-  };
-
   const refRows = (plan.references || []).filter(r => r.label || r.url);
-  const refText = refRows
-    .map(r => `${r.label || "资料"}${r.url ? "：" + r.url : ""}`)
-    .join("\n");
 
   const children = [];
 
-  // 居中大标题
+  // 大标题
   children.push(new Paragraph({
     alignment: AlignmentType.CENTER,
-    spacing: { after: 280 },
-    children: [run("授  课  教  案", { bold: true, size: 36 })]
+    spacing: { before: 400, after: 800 },
+    children: [run("授  课  教  案", { bold: true, size: 72 })]
   }));
 
-  // 基本信息表
+  // 信息行
+  children.push(infoLine("课程名称：", plan.courseName));
+  children.push(infoLine("课程类别：", plan.courseCategory));
+  children.push(infoLine("任课教师：", plan.teacher));
+  children.push(infoLine("任课时间：", plan.teachDate));
+
+  // 教案部分
+  children.push(banner("教案部分：每 1 学时/60 分钟一个教案"));
   children.push(new Table({
     width: { size: 100, type: PCT },
     rows: [
-      row4("课程名称", plan.courseName, "课程类别", plan.courseCategory),
-      row4("任课教师", plan.teacher, "任课时间", fmtCnDate(plan.teachDate)),
-      row2("课　　题", plan.lessonTitle),
-      row2("学　　时", plan.hours ? `${plan.hours} 学时` : ""),
-      row2("教学目标与要求", plan.objectives),
-      row2("参考资料", refText)
+      new TableRow({ children: [labelCell("课　　题", 16), valueCell(textParagraphs(plan.lessonTitle), 84)] }),
+      new TableRow({ children: [labelCell("学　　时", 16), valueCell(textParagraphs(String(plan.hours ?? "")), 84)] }),
+      new TableRow({ children: [labelCell("教学目标与要求", 16), valueCell(textParagraphs(plan.objectives), 84)] }),
+      new TableRow({ children: [labelCell("重　　点", 16), valueCell(textParagraphs(plan.keyPoints), 84)] }),
+      new TableRow({ children: [labelCell("难　　点", 16), valueCell(textParagraphs(plan.difficultPoints), 84)] }),
+      new TableRow({ children: [labelCell("教学方法与手段", 16), valueCell(textParagraphs(plan.methods), 84)] }),
+      new TableRow({
+        children: [
+          labelCell("参考资料", 16),
+          valueCell(
+            refRows.length
+              ? refRows.flatMap(r => textParagraphs(`${r.label || "资料"}：${r.url || ""}`))
+              : textParagraphs(""),
+            84
+          )
+        ]
+      })
     ]
   }));
 
-  children.push(new Paragraph({ text: "", spacing: { after: 120 } }));
-
-  // 教学内容及过程 + 备注
-  const processRows = [
-    new TableRow({
-      children: [labelCell("教学内容及过程", 14), valueCell(outlineParagraphs(), 86, 3)]
-    })
-  ];
-  if (plan.remarks && plan.remarks.trim()) {
-    processRows.push(new TableRow({
-      children: [labelCell("备注", 14), valueCell(textParagraphs(plan.remarks), 86, 3)]
-    }));
-  }
-  children.push(new Table({ width: { size: 100, type: PCT }, rows: processRows }));
-
-  children.push(new Paragraph({ text: "", spacing: { after: 120 } }));
-
-  // 作业布置 / 课后小结
+  // 讲稿部分（另起一页）
+  children.push(banner("讲稿部分（教学内容及过程）：每 1 学时/60 分钟一个讲稿", true));
   children.push(new Table({
     width: { size: 100, type: PCT },
     rows: [
-      row2("作业布置", plan.homework),
-      row2("课后小结", plan.summary)
+      new TableRow({
+        children: [new TableCell({
+          columnSpan: 2,
+          width: { size: 100, type: PCT },
+          verticalAlign: VerticalAlign.CENTER,
+          margins: CELL_MARGIN,
+          children: [new Paragraph({
+            alignment: AlignmentType.CENTER,
+            children: [run("教学内容及过程", { size: 28 })]
+          })]
+        })]
+      }),
+      new TableRow({
+        children: [
+          valueCell(outlineParagraphs(), 80),
+          valueCell(
+            [new Paragraph({ children: [run("备注：")] })].concat(textParagraphs(plan.remarks)),
+            20,
+            { rowSpan: 5 }
+          )
+        ]
+      }),
+      new TableRow({ children: [new TableCell({
+        width: { size: 80, type: PCT }, margins: CELL_MARGIN,
+        children: [new Paragraph({ children: [run("作业布置")] })]
+      })] }),
+      new TableRow({ children: [valueCell(bulletParagraphs(plan.homework), 80)] }),
+      new TableRow({ children: [new TableCell({
+        width: { size: 80, type: PCT }, margins: CELL_MARGIN,
+        children: [new Paragraph({ children: [run("课后小结")] })]
+      })] }),
+      new TableRow({
+        children: [valueCell(
+          textParagraphs(plan.summary).concat([new Paragraph({ text: "" }), new Paragraph({ text: "" })]),
+          80
+        )]
+      })
     ]
-  }));
-
-  // 签名栏
-  children.push(new Paragraph({
-    alignment: AlignmentType.RIGHT,
-    spacing: { before: 360 },
-    children: [run("教师签名：＿＿＿＿＿＿＿　　日期：＿＿＿＿＿＿＿")]
   }));
 
   const doc = new Document({
     styles: {
       default: {
-        document: { run: { font: FONT, size: 24 } }
+        document: { run: { font: FONT, size: 22 } }
       }
     },
     sections: [{

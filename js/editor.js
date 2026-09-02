@@ -1,6 +1,6 @@
-import { Storage } from "./storage.js?v=3";
-import { exportPlanToDocx } from "./docx-export.js?v=3";
-import { Tabs, NEW_TAB, renderRailTabs } from "./tabs.js?v=3";
+import { Storage } from "./storage.js?v=4";
+import { exportPlanToDocx } from "./docx-export.js?v=4";
+import { Tabs, NEW_TAB, renderRailTabs } from "./tabs.js?v=4";
 
 const params = new URLSearchParams(location.search);
 const existingId = params.get("id");
@@ -33,7 +33,7 @@ function showToast(msg) {
 
 /* ---------------- 基本字段绑定 ---------------- */
 
-const basicFields = ["courseName", "courseCategory", "teacher", "teachDate", "lessonTitle", "hours", "objectives", "remarks", "homework", "summary"];
+const basicFields = ["courseName", "courseCategory", "teacher", "teachDate", "lessonTitle", "hours", "objectives", "keyPoints", "difficultPoints", "methods", "remarks", "homework", "summary"];
 
 function fillFormFromPlan() {
   basicFields.forEach(key => {
@@ -230,26 +230,20 @@ $("#export-pdf-btn").addEventListener("click", () => {
   window.print();
 });
 
-/** 把 yyyy-mm-dd 格式化为「yyyy 年 m 月 d 日」，无法解析时原样返回 */
-function fmtCnDate(iso) {
-  if (!iso) return "";
-  const d = new Date(iso + "T00:00:00");
-  if (isNaN(d)) return iso;
-  return `${d.getFullYear()} 年 ${d.getMonth() + 1} 月 ${d.getDate()} 日`;
-}
-
-/** 多级内容 → 中文层级编号（一级「一、」二级「1.」三级「（1）」），高一级出现时低一级序号归零 */
+/** 多级内容 → 与模板一致的圆点层级（• ◦ ▪），悬挂缩进 */
 function buildOutlineHtml(blocks) {
-  const CN = ["一", "二", "三", "四", "五", "六", "七", "八", "九", "十", "十一", "十二", "十三", "十四", "十五"];
-  let c1 = 0, c2 = 0, c3 = 0;
+  const BULLET = { 1: "•", 2: "◦", 3: "▪" };
   const html = (blocks || []).filter(b => b.text).map(b => {
-    const t = escapeHtml(b.text);
-    if (b.level === 2) { c2++; c3 = 0; return `<div class="lvl-2">${c2}. ${t}</div>`; }
-    if (b.level === 3) { c3++; return `<div class="lvl-3">（${c3}）${t}</div>`; }
-    c1++; c2 = 0; c3 = 0;
-    return `<div class="lvl-1">${CN[c1 - 1] || c1}、${t}</div>`;
+    const lv = Math.min(Math.max(b.level || 1, 1), 3);
+    return `<div class="lvl-${lv}">${BULLET[lv]} ${escapeHtml(b.text)}</div>`;
   }).join("");
   return html || '<div class="lvl-1">（暂无内容）</div>';
+}
+
+/** 作业/多条目内容 → 带圆点的段落 */
+function buildBulletLines(text) {
+  const lines = String(text || "").split("\n").map(s => s.trim()).filter(Boolean);
+  return lines.map(l => `<div class="doc-bullet">• ${escapeHtml(l)}</div>`).join("");
 }
 
 function buildPrintView(p) {
@@ -262,38 +256,38 @@ function buildPrintView(p) {
   root.innerHTML = `
     <h1 class="doc-title">授&nbsp;课&nbsp;教&nbsp;案</h1>
 
-    <table class="doc-table doc-info">
-      <tr>
-        <th>课程名称</th><td>${escapeHtml(p.courseName)}</td>
-        <th>课程类别</th><td>${escapeHtml(p.courseCategory)}</td>
-      </tr>
-      <tr>
-        <th>任课教师</th><td>${escapeHtml(p.teacher)}</td>
-        <th>任课时间</th><td>${escapeHtml(fmtCnDate(p.teachDate))}</td>
-      </tr>
-      <tr><th>课&emsp;题</th><td colspan="3">${escapeHtml(p.lessonTitle)}</td></tr>
-      <tr><th>学&emsp;时</th><td colspan="3">${p.hours ? escapeHtml(String(p.hours)) + " 学时" : ""}</td></tr>
-      <tr><th>教学目标<br/>与要求</th><td colspan="3" class="doc-multiline">${nl2br(p.objectives)}</td></tr>
-      <tr><th>参考资料</th><td colspan="3" class="doc-multiline">${refHtml}</td></tr>
-    </table>
-
-    <table class="doc-table">
-      <tr>
-        <th>教学内容<br/>及过程</th>
-        <td colspan="3">${buildOutlineHtml(p.content)}</td>
-      </tr>
-      ${p.remarks && p.remarks.trim() ? `<tr><th>备&emsp;注</th><td colspan="3" class="doc-multiline">${nl2br(p.remarks)}</td></tr>` : ""}
-    </table>
-
-    <table class="doc-table">
-      <tr><th>作业布置</th><td colspan="3" class="doc-multiline">${nl2br(p.homework)}</td></tr>
-      <tr><th>课后小结</th><td colspan="3" class="doc-multiline">${nl2br(p.summary)}</td></tr>
-    </table>
-
-    <div class="doc-sign">
-      <span>教师签名：＿＿＿＿＿＿＿</span>
-      <span>日期：＿＿＿＿＿＿＿</span>
+    <div class="doc-info">
+      <p><span class="doc-label">课程名称：</span><span class="doc-value">${escapeHtml(p.courseName)}</span></p>
+      <p><span class="doc-label">课程类别：</span><span class="doc-value">${escapeHtml(p.courseCategory)}</span></p>
+      <p><span class="doc-label">任课教师：</span><span class="doc-value">${escapeHtml(p.teacher)}</span></p>
+      <p><span class="doc-label">任课时间：</span><span class="doc-value">${escapeHtml(p.teachDate)}</span></p>
     </div>
+
+    <div class="doc-banner">●&ensp;教案部分：每 1 学时/60 分钟一个教案</div>
+
+    <table class="doc-table">
+      <tr><th>课&emsp;&emsp;题</th><td>${escapeHtml(p.lessonTitle)}</td></tr>
+      <tr><th>学&emsp;&emsp;时</th><td>${escapeHtml(String(p.hours || ""))}</td></tr>
+      <tr><th>教学目标<br/>与要求</th><td class="doc-multiline">${nl2br(p.objectives)}</td></tr>
+      <tr><th>重&emsp;&emsp;点</th><td class="doc-multiline">${nl2br(p.keyPoints)}</td></tr>
+      <tr><th>难&emsp;&emsp;点</th><td class="doc-multiline">${nl2br(p.difficultPoints)}</td></tr>
+      <tr><th>教学方法<br/>与手段</th><td class="doc-multiline">${nl2br(p.methods)}</td></tr>
+      <tr><th>参考资料</th><td class="doc-multiline">${refHtml}</td></tr>
+    </table>
+
+    <div class="doc-banner page-break">●&ensp;讲稿部分（教学内容及过程）：每 1 学时/60 分钟一个讲稿</div>
+
+    <table class="doc-table doc-process">
+      <tr><th class="doc-process-head" colspan="2">教学内容及过程</th></tr>
+      <tr>
+        <td class="doc-process-content">${buildOutlineHtml(p.content)}</td>
+        <td class="doc-process-remarks doc-multiline" rowspan="5">备注：${nl2br(p.remarks)}</td>
+      </tr>
+      <tr><td class="doc-row-label">作业布置</td></tr>
+      <tr><td class="doc-multiline">${buildBulletLines(p.homework)}</td></tr>
+      <tr><td class="doc-row-label">课后小结</td></tr>
+      <tr><td class="doc-tall doc-multiline">${nl2br(p.summary)}</td></tr>
+    </table>
   `;
 }
 
