@@ -252,7 +252,7 @@ export async function exportPlanToDocx(plan) {
     ]
   }));
 
-  const doc = new Document({
+  const document = new Document({
     styles: {
       default: {
         document: { run: { font: FONT, size: 22 } }
@@ -269,7 +269,7 @@ export async function exportPlanToDocx(plan) {
     }]
   });
 
-  const blob = await Packer.toBlob(doc);
+  const blob = await Packer.toBlob(document);
   const fileName = `${(doc.lessonPlanRows[0].value || "教案").replace(/[\\/:*?"<>|]/g, "")}.docx`;
   window.saveAs(blob, fileName);
 }
