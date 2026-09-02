@@ -82,18 +82,71 @@ export async function exportPlanToDocx(plan) {
     }));
   };
 
-  /** 讲稿大纲 → 圆点层级段落（一级加粗） */
+  /** 讲稿大纲 → 解析富文本 HTML（嵌套 ul/li）为带圆点、缩进和字型的段落 */
   const outlineParagraphs = () => {
-    const blocks = (plan.content || []).filter(b => b.text);
-    if (!blocks.length) return textParagraphs("（暂无内容）");
-    return blocks.map(b => {
-      const level = Math.min(Math.max(b.level || 1, 1), 3);
-      return new Paragraph({
-        indent: { left: (level - 1) * 360 + 280, hanging: 240 },
-        spacing: { line: 320, after: 40 },
-        children: [run((BULLET[level] || "• ") + b.text, { bold: level === 1 })]
+    const html = plan.contentHtml || "";
+    if (!html.trim()) return textParagraphs("（暂无内容）");
+    const container = document.createElement("div");
+    container.innerHTML = html;
+
+    // 没有列表结构时（纯文本/纯段落），按整块文本处理
+    if (!container.querySelector("ul,ol")) {
+      return textParagraphs(container.innerText || container.textContent || "（暂无内容）");
+    }
+
+    const paras = [];
+    // 收集 li 内的内联格式（跳过嵌套列表）；一级条目整行加粗，与模板一致
+    const collectRuns = (node, fmt, runs) => {
+      node.childNodes.forEach(n => {
+        if (n.nodeType === Node.TEXT_NODE) {
+          const t = n.textContent;
+          if (t) {
+            const o = {};
+            if (fmt.b) o.bold = true;
+            if (fmt.i) o.italics = true;
+            if (fmt.u) o.underline = {};
+            runs.push(run(t, o));
+          }
+        } else if (n.nodeType === Node.ELEMENT_NODE) {
+          const tag = n.tagName;
+          if (tag === "UL" || tag === "OL" || tag === "BR") return;
+          collectRuns(n, {
+            b: fmt.b || tag === "B" || tag === "STRONG",
+            i: fmt.i || tag === "I" || tag === "EM",
+            u: fmt.u || tag === "U"
+          }, runs);
+        }
       });
+    };
+
+    const walkList = (list, depth) => {
+      Array.from(list.children).forEach(el => {
+        // 兼容浏览器两种输出：<ul> 嵌在 <li> 内，或直接并列在上级 <ul> 下
+        if (el.tagName === "UL" || el.tagName === "OL") { walkList(el, depth + 1); return; }
+        if (el.tagName !== "LI") return;
+        const runs = [];
+        collectRuns(el, { b: depth === 1, i: false, u: false }, runs);
+        paras.push(new Paragraph({
+          indent: { left: (depth - 1) * 360 + 280, hanging: 240 },
+          spacing: { line: 320, after: 40 },
+          children: [run(BULLET[depth] || "• ", { bold: depth === 1 })].concat(
+            runs.length ? runs : [run(" ")]
+          )
+        }));
+        Array.from(el.children).forEach(child => {
+          if (child.tagName === "UL" || child.tagName === "OL") walkList(child, depth + 1);
+        });
+      });
+    };
+
+    Array.from(container.children).forEach(el => {
+      if (el.tagName === "UL" || el.tagName === "OL") walkList(el, 1);
+      else {
+        const text = el.textContent || "";
+        if (text.trim()) paras.push(new Paragraph({ spacing: { line: 320 }, children: [run(text)] }));
+      }
     });
+    return paras.length ? paras : textParagraphs("（暂无内容）");
   };
 
   /** 表格标签单元格（居中，模板中不加粗） */

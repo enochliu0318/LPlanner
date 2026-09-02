@@ -1,6 +1,6 @@
-import { Storage } from "./storage.js?v=4";
-import { exportPlanToDocx } from "./docx-export.js?v=4";
-import { Tabs, NEW_TAB, renderRailTabs } from "./tabs.js?v=4";
+import { Storage } from "./storage.js?v=5";
+import { exportPlanToDocx } from "./docx-export.js?v=5";
+import { Tabs, NEW_TAB, renderRailTabs } from "./tabs.js?v=5";
 
 const params = new URLSearchParams(location.search);
 const existingId = params.get("id");
@@ -41,7 +41,7 @@ function fillFormFromPlan() {
     if (el) el.value = plan[key] ?? "";
   });
   renderReferences();
-  renderContent();
+  fillContentEditor();
   updatePageTitle();
 }
 
@@ -51,7 +51,7 @@ function readFormIntoPlan() {
     if (el) plan[key] = el.value;
   });
   plan.references = readReferencesFromDOM();
-  plan.content = readContentFromDOM();
+  readContentEditor();
 }
 
 function updatePageTitle() {
@@ -97,82 +97,63 @@ function readReferencesFromDOM() {
     .filter(r => r.label || r.url);
 }
 
-/* ---------------- 教学内容大纲（多级、可排序） ---------------- */
+/* ---------------- 教学内容及过程（Word 式富文本编辑） ---------------- */
 
-const contentList = $("#content-list");
+const contentEditor = $("#content-editor");
 
-function renderContent() {
-  contentList.innerHTML = "";
-  const blocks = plan.content && plan.content.length ? plan.content : [{ level: 1, text: "" }];
-  blocks.forEach(block => contentList.appendChild(buildContentRow(block)));
+/** 旧版行级数据 [{level, text}] → 嵌套 <ul> HTML（兼容历史教案） */
+function legacyToHtml(blocks) {
+  if (!blocks || !blocks.length) return "";
+  const parts = [];
+  let depth = 0, liOpen = false;
+  blocks.filter(b => b.text).forEach(b => {
+    const lv = Math.min(Math.max(b.level || 1, 1), 3);
+    while (depth < lv) { parts.push("<ul>"); depth++; liOpen = false; }
+    while (depth > lv) { parts.push("</li></ul>"); depth--; liOpen = true; }
+    parts.push((liOpen ? "</li><li>" : "<li>") + escapeHtml(b.text));
+    liOpen = true;
+  });
+  while (depth > 0) { parts.push(liOpen ? "</li></ul>" : "</ul>"); depth--; liOpen = false; }
+  if (liOpen) parts.push("</li>");
+  return parts.join("");
 }
 
-function levelLabel(level) {
-  return level === 1 ? "一级" : level === 2 ? "二级" : "三级";
+/** 页面加载时把编辑内容填入富文本窗口 */
+function fillContentEditor() {
+  // 兼容旧数据：没有 contentHtml 时从旧的行级数据转换
+  if (!plan.contentHtml) plan.contentHtml = legacyToHtml(plan.content);
+  contentEditor.innerHTML = plan.contentHtml || "";
 }
 
-function buildContentRow(block) {
-  const row = document.createElement("div");
-  row.className = "outline-row";
-  row.dataset.level = block.level || 1;
-  row.innerHTML = `
-    <div class="level-tag" title="点击切换层级">${levelLabel(block.level || 1)}</div>
-    <textarea class="outline-text" rows="1" placeholder="填写这一条教学内容...">${escapeHtml(block.text || "")}</textarea>
-    <div class="row-actions">
-      <button type="button" class="icon-btn move-up" title="上移">↑</button>
-      <button type="button" class="icon-btn move-down" title="下移">↓</button>
-      <button type="button" class="icon-btn remove-row" title="删除">✕</button>
-    </div>
-  `;
-
-  row.querySelector(".level-tag").addEventListener("click", () => {
-    const cur = Number(row.dataset.level) || 1;
-    const next = cur >= 3 ? 1 : cur + 1;
-    row.dataset.level = next;
-    row.querySelector(".level-tag").textContent = levelLabel(next);
-  });
-
-  row.querySelector(".move-up").addEventListener("click", () => {
-    const prev = row.previousElementSibling;
-    if (prev) contentList.insertBefore(row, prev);
-  });
-  row.querySelector(".move-down").addEventListener("click", () => {
-    const next = row.nextElementSibling;
-    if (next) contentList.insertBefore(next, row);
-  });
-  row.querySelector(".remove-row").addEventListener("click", () => {
-    if (contentList.children.length > 1) {
-      row.remove();
-    } else {
-      row.querySelector(".outline-text").value = "";
-    }
-  });
-
-  // 自适应高度
-  const ta = row.querySelector(".outline-text");
-  autoGrow(ta);
-  ta.addEventListener("input", () => autoGrow(ta));
-
-  return row;
+/** 读取富文本窗口内容（空内容归一化为空字符串） */
+function readContentEditor() {
+  const raw = contentEditor.innerHTML.trim();
+  plan.contentHtml = (raw === "" || raw === "<br>" || raw === "<div><br></div>") ? "" : contentEditor.innerHTML;
 }
 
-function autoGrow(ta) {
-  ta.style.height = "auto";
-  ta.style.height = (ta.scrollHeight) + "px";
-}
-
-$("#add-content-btn").addEventListener("click", () => {
-  contentList.appendChild(buildContentRow({ level: 1, text: "" }));
+// 工具栏：mousedown 阻止编辑器失焦，保持选区
+document.querySelectorAll("#rich-toolbar [data-cmd]").forEach(btn => {
+  btn.addEventListener("mousedown", e => e.preventDefault());
+  btn.addEventListener("click", () => {
+    contentEditor.focus();
+    document.execCommand(btn.dataset.cmd, false, btn.dataset.value || null);
+  });
 });
 
-function readContentFromDOM() {
-  return [...contentList.querySelectorAll(".outline-row")]
-    .map(row => ({
-      level: Number(row.dataset.level) || 1,
-      text: row.querySelector(".outline-text").value.trim()
-    }))
-    .filter(b => b.text);
-}
+// Word 式快捷键：Tab 降级 / Shift+Tab 升级
+contentEditor.addEventListener("keydown", (e) => {
+  if (e.key === "Tab") {
+    e.preventDefault();
+    document.execCommand(e.shiftKey ? "outdent" : "indent");
+  }
+});
+
+// 粘贴外部内容时清理为纯文本，避免带入奇怪的样式
+contentEditor.addEventListener("paste", (e) => {
+  e.preventDefault();
+  const text = (e.clipboardData || window.clipboardData).getData("text/plain");
+  document.execCommand("insertText", false, text);
+});
 
 /* ---------------- 未保存更改提醒 ---------------- */
 
@@ -230,16 +211,6 @@ $("#export-pdf-btn").addEventListener("click", () => {
   window.print();
 });
 
-/** 多级内容 → 与模板一致的圆点层级（• ◦ ▪），悬挂缩进 */
-function buildOutlineHtml(blocks) {
-  const BULLET = { 1: "•", 2: "◦", 3: "▪" };
-  const html = (blocks || []).filter(b => b.text).map(b => {
-    const lv = Math.min(Math.max(b.level || 1, 1), 3);
-    return `<div class="lvl-${lv}">${BULLET[lv]} ${escapeHtml(b.text)}</div>`;
-  }).join("");
-  return html || '<div class="lvl-1">（暂无内容）</div>';
-}
-
 /** 作业/多条目内容 → 带圆点的段落 */
 function buildBulletLines(text) {
   const lines = String(text || "").split("\n").map(s => s.trim()).filter(Boolean);
@@ -280,7 +251,7 @@ function buildPrintView(p) {
     <table class="doc-table doc-process">
       <tr><th class="doc-process-head" colspan="2">教学内容及过程</th></tr>
       <tr>
-        <td class="doc-process-content">${buildOutlineHtml(p.content)}</td>
+        <td class="doc-process-content doc-multiline">${plan.contentHtml || ""}</td>
         <td class="doc-process-remarks doc-multiline" rowspan="5">备注：${nl2br(p.remarks)}</td>
       </tr>
       <tr><td class="doc-row-label">作业布置</td></tr>

@@ -422,35 +422,70 @@ input:focus, textarea:focus, select:focus {
   align-items: center;
 }
 
-.outline-row {
-  display: grid;
-  grid-template-columns: auto 1fr auto;
-  gap: 8px;
-  margin-bottom: 8px;
-  align-items: flex-start;
-}
+/* ---------- 教学内容及过程：Word 式富文本编辑 ---------- */
 
-.outline-row .level-tag {
-  font-family: var(--font-mono);
-  font-size: 11px;
-  color: #fff;
-  background: var(--ink-green-700);
-  border-radius: 3px;
-  padding: 6px 6px;
-  text-align: center;
-  min-width: 34px;
-  align-self: center;
-}
-.outline-row[data-level="2"] .level-tag { background: #6b7f5a; }
-.outline-row[data-level="3"] .level-tag { background: #9a8f6e; }
-.outline-row[data-level="2"] { margin-left: 24px; }
-.outline-row[data-level="3"] { margin-left: 48px; }
-
-.row-actions {
+.rich-toolbar {
   display: flex;
-  flex-direction: column;
+  align-items: center;
   gap: 4px;
+  flex-wrap: wrap;
+  margin-bottom: 8px;
 }
+
+.rich-toolbar .rt-btn {
+  border: 1px solid var(--border);
+  background: var(--paper-card);
+  border-radius: var(--radius-s);
+  padding: 5px 10px;
+  font-size: 12.5px;
+  line-height: 1;
+  color: var(--ink-soft);
+  cursor: pointer;
+}
+.rich-toolbar .rt-btn:hover {
+  border-color: var(--ink-green-700);
+  color: var(--ink-green-800);
+  background: var(--paper);
+}
+.rich-toolbar .rt-italic,
+.rich-toolbar .rt-underline { font-family: var(--font-serif); }
+.rich-toolbar .rt-divider {
+  width: 1px;
+  height: 18px;
+  background: var(--border);
+  margin: 0 4px;
+}
+
+.rich-editor {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-s);
+  background: var(--paper);
+  min-height: 260px;
+  max-height: 60vh;
+  overflow-y: auto;
+  padding: 12px 16px;
+  font-size: 14.5px;
+  line-height: 1.8;
+  outline-offset: 1px;
+}
+.rich-editor:focus { outline: 2px solid var(--ink-green-700); }
+.rich-editor:empty::before {
+  content: attr(data-placeholder);
+  color: var(--ink-faint);
+  pointer-events: none;
+}
+
+/* 编辑器内列表样式与导出效果保持一致（所见即所得） */
+.rich-editor ul {
+  margin: 0;
+  padding-left: 1.6em;
+  list-style-type: disc;
+}
+.rich-editor ul ul { list-style-type: circle; }
+.rich-editor ul ul ul { list-style-type: square; }
+.rich-editor > ul > li { font-weight: 700; }
+.rich-editor li { margin: 3px 0; }
+.rich-editor p { margin: 0 0 6px; }
 
 .icon-btn {
   border: 1px solid var(--border);
@@ -620,10 +655,16 @@ input:focus, textarea:focus, select:focus {
   td.doc-row-label { letter-spacing: 0.1em; }
   td.doc-tall { height: 80pt; }
 
-  /* 多级讲稿列表：与模板一致的圆点 + 悬挂缩进 */
-  table.doc-table .lvl-1 { padding-left: 1.6em; text-indent: -1.3em; margin: 3pt 0; font-weight: 700; }
-  table.doc-table .lvl-2 { padding-left: 3.4em; text-indent: -1.3em; margin: 3pt 0; }
-  table.doc-table .lvl-3 { padding-left: 5.2em; text-indent: -1.3em; margin: 3pt 0; }
+  /* 多级讲稿列表：与编辑器一致的圆点 + 悬挂缩进（所见即所得） */
+  table.doc-table td.doc-process-content ul {
+    margin: 0;
+    padding-left: 1.5em;
+    list-style-type: disc;
+  }
+  table.doc-table td.doc-process-content ul ul { list-style-type: circle; }
+  table.doc-table td.doc-process-content ul ul ul { list-style-type: square; }
+  table.doc-table td.doc-process-content > ul > li { font-weight: 700; }
+  table.doc-table td.doc-process-content li { margin: 3pt 0; }
   table.doc-table .doc-bullet { padding-left: 1.6em; text-indent: -1.3em; margin: 2pt 0; }
 }
 

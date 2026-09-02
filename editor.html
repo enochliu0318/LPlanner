@@ -4,7 +4,7 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>编辑教案 · 备课本</title>
-<link rel="stylesheet" href="css/style.css?v=4" />
+<link rel="stylesheet" href="css/style.css?v=5" />
 </head>
 <body>
 <div class="app-shell">
@@ -101,9 +101,17 @@
 
       <section class="form-section">
         <h2>教学内容及过程</h2>
-        <p class="hint" style="margin-bottom:10px">按讲课顺序添加要点，可设置层级（一级 / 二级 / 三级），对应模板中的多级列表。</p>
-        <div id="content-list"></div>
-        <button type="button" class="btn btn-sm add-row-btn" id="add-content-btn">＋ 添加一条内容</button>
+        <p class="hint" style="margin-bottom:10px">像编辑 Word 一样直接输入：选中文字可加粗、斜体、下划线；用「项目符号」建立条目，选中条目后 Tab 降级、Shift+Tab 升级。</p>
+        <div class="rich-toolbar" id="rich-toolbar">
+          <button type="button" class="rt-btn" data-cmd="bold" title="加粗"><b>B</b></button>
+          <button type="button" class="rt-btn rt-italic" data-cmd="italic" title="斜体"><i>I</i></button>
+          <button type="button" class="rt-btn rt-underline" data-cmd="underline" title="下划线"><u>U</u></button>
+          <span class="rt-divider"></span>
+          <button type="button" class="rt-btn" data-cmd="insertUnorderedList" title="项目符号（一级条目）">• 项目符号</button>
+          <button type="button" class="rt-btn" data-cmd="outdent" title="提升层级（减少缩进）">⇤ 升级</button>
+          <button type="button" class="rt-btn" data-cmd="indent" title="降低层级（增加缩进）">⇥ 降级</button>
+        </div>
+        <div id="content-editor" class="rich-editor" contenteditable="true" data-placeholder="按讲课顺序输入讲稿：点「项目符号」添加条目，Tab 降级、Shift+Tab 升级，可加粗重点内容…"></div>
         <div class="field full" style="margin-top:16px">
           <label for="remarks">备注</label>
           <textarea id="remarks" placeholder="课堂提醒、时间分配、差异化教学提示等"></textarea>
@@ -145,6 +153,6 @@
 
 <div class="toast" id="toast"></div>
 
-<script type="module" src="js/editor.js?v=4"></script>
+<script type="module" src="js/editor.js?v=5"></script>
 </body>
 </html>
