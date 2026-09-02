@@ -44,11 +44,11 @@
         <div class="field-grid">
           <div class="field">
             <label for="courseName">课程名称</label>
-            <input type="text" id="courseName" placeholder="例如：Magic Tree House" />
+            <input type="text" id="courseName" />
           </div>
           <div class="field">
             <label for="courseCategory">课程类别</label>
-            <input type="text" id="courseCategory" placeholder="例如：English Reading and Writing" />
+            <input type="text" id="courseCategory" />
           </div>
           <div class="field">
             <label for="teacher">任课教师</label>
@@ -60,7 +60,7 @@
           </div>
           <div class="field">
             <label for="lessonTitle">课题</label>
-            <input type="text" id="lessonTitle" placeholder="例如：Dolphins at Daybreak L1" />
+            <input type="text" id="lessonTitle" />
           </div>
           <div class="field">
             <label for="hours">学时（每学时 60 分钟）</label>
@@ -101,7 +101,7 @@
 
       <section class="form-section">
         <h2>教学内容及过程</h2>
-        <p class="hint" style="margin-bottom:10px">像编辑 Word 一样直接输入：选中文字可加粗、斜体、下划线；用「项目符号」建立条目，选中条目后 Tab 降级、Shift+Tab 升级。</p>
+        <p class="hint" style="margin-bottom:10px">选中文字可加粗、斜体、下划线；用「项目符号」建立条目，选中条目后 Tab 降级、Shift+Tab 升级。</p>
         <div class="rich-toolbar" id="rich-toolbar">
           <button type="button" class="rt-btn" data-cmd="bold" title="加粗"><b>B</b></button>
           <button type="button" class="rt-btn rt-italic" data-cmd="italic" title="斜体"><i>I</i></button>
@@ -111,7 +111,7 @@
           <button type="button" class="rt-btn" data-cmd="outdent" title="提升层级（减少缩进）">⇤ 升级</button>
           <button type="button" class="rt-btn" data-cmd="indent" title="降低层级（增加缩进）">⇥ 降级</button>
         </div>
-        <div id="content-editor" class="rich-editor" contenteditable="true" data-placeholder="按讲课顺序输入讲稿：点「项目符号」添加条目，Tab 降级、Shift+Tab 升级，可加粗重点内容..."></div>
+        <div id="content-editor" class="rich-editor" contenteditable="true" data-placeholder="按讲课顺序输入讲稿..."></div>
         <div class="field full" style="margin-top:16px">
           <label for="remarks">备注</label>
           <textarea id="remarks" placeholder="课堂提醒、时间分配、差异化教学提示等..."></textarea>

@@ -628,6 +628,8 @@ input:focus, textarea:focus, select:focus {
   table.doc-table {
     width: 100%;
     border-collapse: collapse;
+    border-spacing: 0;
+    border: none;
     margin-bottom: 12pt;
   }
   table.doc-table th, table.doc-table td {
@@ -732,6 +734,8 @@ body.pdf-capture .doc-banner {
 body.pdf-capture table.doc-table {
   width: 100%;
   border-collapse: collapse;
+  border-spacing: 0;
+  border: none;
   margin-bottom: 12pt;
 }
 body.pdf-capture table.doc-table th,
