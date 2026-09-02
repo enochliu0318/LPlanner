@@ -631,7 +631,7 @@ input:focus, textarea:focus, select:focus {
     margin-bottom: 12pt;
   }
   table.doc-table th, table.doc-table td {
-    border: 1px solid #000;
+    border: 0.5pt solid #000;
     padding: 6pt 8pt;
     vertical-align: top;
     text-align: left;
@@ -736,7 +736,7 @@ body.pdf-capture table.doc-table {
 }
 body.pdf-capture table.doc-table th,
 body.pdf-capture table.doc-table td {
-  border: 1px solid #000;
+  border: 0.5pt solid #000;
   padding: 6pt 8pt;
   vertical-align: top;
   text-align: left;
