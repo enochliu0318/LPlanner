@@ -468,6 +468,7 @@ function openAiSettings() {
     `<option value="${m.id}" ${m.id === config.model ? "selected" : ""}>${m.name}</option>`
   ).join("");
   $("#ai-api-key").value = config.apiKey || "";
+  $("#ai-model-custom").value = "";
   $("#ai-modal").style.display = "flex";
 }
 
@@ -479,7 +480,9 @@ $("#ai-chat-settings").addEventListener("click", openAiSettings);
 $("#ai-modal-backdrop").addEventListener("click", closeAiSettings);
 $("#ai-cancel-settings").addEventListener("click", closeAiSettings);
 $("#ai-save-settings").addEventListener("click", () => {
-  const model = $("#ai-model-select").value;
+  // 优先使用自定义模型 ID，否则使用下拉列表选择的模型
+  const customModel = $("#ai-model-custom").value.trim();
+  const model = customModel || $("#ai-model-select").value;
   const apiKey = $("#ai-api-key").value.trim();
   saveAiConfig({ model, apiKey });
   closeAiSettings();
@@ -495,8 +498,9 @@ $("#ai-test-btn").addEventListener("click", async () => {
   btn.disabled = true;
 
   try {
+    const customModel = $("#ai-model-custom").value.trim();
     const config = {
-      model: $("#ai-model-select").value,
+      model: customModel || $("#ai-model-select").value,
       apiKey: $("#ai-api-key").value.trim(),
     };
     const headers = { "Content-Type": "application/json" };

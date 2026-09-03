@@ -4,7 +4,7 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>编辑教案 · 备课本</title>
-<link rel="stylesheet" href="css/style.css?v=21" />
+<link rel="stylesheet" href="css/style.css?v=22" />
 </head>
 <body>
 <div class="app-shell">
@@ -220,6 +220,12 @@
       <div class="field">
         <label for="ai-model-select">模型选择</label>
         <select id="ai-model-select"></select>
+        <p classhint">如果列表中没有你想要的模型，可以手动输入模型 ID</p>
+      </div>
+
+      <div class="field">
+        <label for="ai-model-custom">或手动输入模型 ID</label>
+        <input type="text" id="ai-model-custom" placeholder="例如：llama3-8b-8192" />
       </div>
 
       <div class="ai-test-row">
@@ -240,6 +246,6 @@
 
 <div class="toast" id="toast"></div>
 
-<script type="module" src="js/editor.js?v=21"></script>
+<script type="module" src="js/editor.js?v=22"></script>
 </body>
 </html>

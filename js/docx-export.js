@@ -7,7 +7,7 @@
    讲稿部分大表（左宽栏圆点讲稿 + 右侧贯通的备注列）。
    ============================================================ */
 
-import { buildDocumentModel } from "./document-model.js?v=21";
+import { buildDocumentModel } from "./document-model.js?v=22";
 
 const DOCX_CDN = "https://unpkg.com/docx@8.5.0/build/index.umd.js";
 const DOCX_CDN_FALLBACK = "https://cdn.jsdelivr.net/npm/docx@8.5.0/build/index.umd.js";
