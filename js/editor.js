@@ -499,16 +499,12 @@ $("#ai-test-btn").addEventListener("click", async () => {
       model: $("#ai-model-select").value,
       apiKey: $("#ai-api-key").value.trim(),
     };
-    const headers = {
-      "Content-Type": "application/json",
-      "HTTP-Referer": window.location.origin,
-      "X-Title": "Lesson Planner",
-    };
+    const headers = { "Content-Type": "application/json" };
     if (config.apiKey) {
       headers["Authorization"] = `Bearer ${config.apiKey}`;
     }
 
-    const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+    const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
       method: "POST",
       headers,
       body: JSON.stringify({

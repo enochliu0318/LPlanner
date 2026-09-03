@@ -1,45 +1,39 @@
 /* ============================================================
     ai.js
-    AI 辅助备课功能 —— 前端直接调用 OpenRouter API
+    AI 辅助备课功能 —— 前端直接调用 Groq API
     （免费开源模型推理服务，无需后端服务器）
 
-    使用 OpenRouter 的免费模型，支持 CORS，可直接在浏览器调用。
-
+    Groq 提供免费的高速推理服务，支持 CORS，可直接在浏览器调用。
     免费模型推荐：
-    - google/gemini-2.0-flash-001（Google，速度快）
-    - qwen/qwen-2-7b-instruct（阿里，中文好）
-    - meta-llama/llama-3.1-8b-instruct（Meta）
+    - llama-3.3-70b-versatile（Meta，综合能力强）
+    - llama-3.1-8b-instant（Meta，速度快）
+    - gemma2-9b-it（Google）
 
-    用户可在设置中填入自己的 OpenRouter API Key 以获得更高速率。
-    免费的 API Key 在 https://openrouter.ai/settings/keys 创建。
+    用户可在设置中填入自己的 Groq API Key 以获得更高速率。
+    免费的 API Key 在 https://console.groq.com/keys 创建。
     ============================================================ */
 
-const AI_STORAGE_KEY = "lesson_planner_ai_v3";
+const AI_STORAGE_KEY = "lesson_planner_ai_v4";
 
-// OpenRouter API 端点
-const OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions";
+// Groq API 端点
+const GROQ_URL = "https://api.groq.com/openai/v1/chat/completions";
 
 // 可用模型列表（免费模型）
 export const AI_MODELS = [
   {
-    id: "google/gemini-2.0-flash-001",
-    name: "Gemini 2.0 Flash（推荐）",
-    description: "Google 开源，速度快，支持中文",
-  },
-  {
-    id: "qwen/qwen-2-7b-instruct",
-    name: "Qwen 2 7B",
-    description: "阿里巴巴开源，中文理解能力强",
-  },
-  {
-    id: "meta-llama/llama-3.1-8b-instruct",
-    name: "Llama 3.1 8B",
+    id: "llama-3.3-70b-versatile",
+    name: "Llama 3.3 70B（推荐）",
     description: "Meta 开源，综合能力强",
   },
   {
-    id: "microsoft/phi-3-medium-128k-instruct",
-    name: "Phi 3 Medium",
-    description: "微软开源，推理能力强",
+    id: "llama-3.1-8b-instant",
+    name: "Llama 3.1 8B（快）",
+    description: "Meta 开源，速度最快",
+  },
+  {
+    id: "gemma2-9b-it",
+    name: "Gemma 2 9B",
+    description: "Google 开源",
   },
 ];
 
@@ -73,13 +67,9 @@ export function saveAiConfig(config) {
   }
 }
 
-// 调用 OpenRouter API
-async function callOpenRouter(systemPrompt, userPrompt, config) {
-  const headers = {
-    "Content-Type": "application/json",
-    "HTTP-Referer": window.location.origin,
-    "X-Title": "Lesson Planner",
-  };
+// 调用 Groq API
+async function callGroq(systemPrompt, userPrompt, config) {
+  const headers = { "Content-Type": "application/json" };
   if (config.apiKey) {
     headers["Authorization"] = `Bearer ${config.apiKey}`;
   }
@@ -89,7 +79,7 @@ async function callOpenRouter(systemPrompt, userPrompt, config) {
   const timeoutId = setTimeout(() => controller.abort(), 120000); // 120 秒超时
 
   try {
-    const response = await fetch(OPENROUTER_URL, {
+    const response = await fetch(GROQ_URL, {
       method: "POST",
       headers,
       signal: controller.signal,
@@ -113,7 +103,7 @@ async function callOpenRouter(systemPrompt, userPrompt, config) {
     }
 
     const data = await response.json();
-    // OpenRouter 返回格式: { choices: [{ message: { content: "..." } }] }
+    // Groq 返回格式与 OpenAI 兼容: { choices: [{ message: { content: "..." } }] }
     if (data.choices && data.choices.length > 0) {
       return data.choices[0].message?.content || "";
     }
@@ -187,7 +177,7 @@ export async function callAI(feature, content, context = {}) {
   const systemPrompt = buildSystemPrompt(feature, context);
   const userPrompt = buildUserPrompt(feature, content, context);
 
-  return callOpenRouter(systemPrompt, userPrompt, config);
+  return callGroq(systemPrompt, userPrompt, config);
 }
 
 // 内容润色
