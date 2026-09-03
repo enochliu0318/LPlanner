@@ -1,9 +1,9 @@
-import { Storage } from "./storage.js?v=25";
-import { exportPlanToDocx } from "./docx-export.js?v=25";
-import { exportPlanToPdf } from "./pdf-export.js?v=25";
-import { Tabs, NEW_TAB, renderRailTabs } from "./tabs.js?v=25";
-import { buildDocumentModel } from "./document-model.js?v=25";
-import { sendMessage, AI_MODELS, getAiConfig, saveAiConfig } from "./ai.js?v=25";
+import { Storage } from "./storage.js?v=26";
+import { exportPlanToDocx } from "./docx-export.js?v=26";
+import { exportPlanToPdf } from "./pdf-export.js?v=26";
+import { Tabs, NEW_TAB, renderRailTabs } from "./tabs.js?v=26";
+import { buildDocumentModel } from "./document-model.js?v=26";
+import { sendMessage, AI_MODELS, getAiConfig, saveAiConfig } from "./ai.js?v=26";
 
 const params = new URLSearchParams(location.search);
 const existingId = params.get("id");
@@ -303,6 +303,61 @@ function addMessage(role, content) {
   msg.appendChild(contentDiv);
   messages.appendChild(msg);
   messages.scrollTop = messages.scrollHeight;
+  return msg;
+}
+
+/* AI 回复填入教案字段 */
+const AI_FILL_TARGETS = [
+  { key: "objectives",      label: "教学目标与要求" },
+  { key: "keyPoints",       label: "教学重点" },
+  { key: "difficultPoints", label: "教学难点" },
+  { key: "methods",         label: "教学方法与手段" },
+  { key: "homework",        label: "作业布置" },
+  { key: "remarks",         label: "备注" },
+  { key: "summary",         label: "课后小结" },
+  { key: "__content",       label: "教学内容及过程（追加）" },
+];
+
+function addFillRow(msgEl, text) {
+  const row = document.createElement("div");
+  row.className = "ai-fill-row";
+
+  const select = document.createElement("select");
+  select.className = "ai-fill-select";
+  select.innerHTML = AI_FILL_TARGETS.map(t =>
+    `<option value="${t.key}">${t.label}</option>`
+  ).join("");
+
+  const btn = document.createElement("button");
+  btn.type = "button";
+  btn.className = "ai-fill-btn";
+  btn.textContent = "填入";
+  btn.addEventListener("click", () => {
+    const target = select.value;
+    if (target === "__content") {
+      // 教学内容及过程：逐行追加为一级条目，不覆盖已有讲稿
+      const lines = text.split(/\n+/).map(s => s.trim()).filter(Boolean);
+      if (!lines.length) { showToast("没有可填入的内容"); return; }
+      let topUl = [...contentEditor.children].find(el => el.tagName === "UL");
+      if (!topUl) { topUl = document.createElement("ul"); contentEditor.appendChild(topUl); }
+      lines.forEach(line => {
+        const li = document.createElement("li");
+        li.textContent = line;
+        topUl.appendChild(li);
+      });
+      readContentEditor();
+      showToast("已追加到「教学内容及过程」");
+    } else {
+      const el = document.getElementById(target);
+      if (el) { el.value = text; plan[target] = text; }
+      showToast("已填入");
+    }
+    dirty = true;
+  });
+
+  row.appendChild(select);
+  row.appendChild(btn);
+  msgEl.appendChild(row);
 }
 
 // Show typing indicator
@@ -340,7 +395,8 @@ async function sendAiMessage() {
     const result = await sendMessage(input, aiHistory.slice(0, -1));
     aiHistory.push({ role: "assistant", content: result });
     hideTyping();
-    addMessage("ai", result);
+    const msgEl = addMessage("ai", result);
+    if (msgEl) addFillRow(msgEl, result);
   } catch (err) {
     hideTyping();
     addMessage("error", "Error: " + err.message);

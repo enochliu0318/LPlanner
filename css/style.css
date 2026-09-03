@@ -744,6 +744,38 @@ input:focus, textarea:focus, select:focus {
   color: #fff;
 }
 
+/* AI 回复填入教案字段 */
+.ai-fill-row {
+  display: flex;
+  gap: 6px;
+  margin-top: 8px;
+  align-items: center;
+}
+
+.ai-fill-select {
+  flex: 1;
+  min-width: 0;
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  background: #fff;
+  font-size: 12px;
+  padding: 4px 6px;
+  color: var(--ink);
+}
+
+.ai-fill-btn {
+  flex-shrink: 0;
+  border: none;
+  background: var(--ink-green-800);
+  color: #fff;
+  border-radius: 3px;
+  padding: 5px 12px;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.ai-fill-btn:hover { background: var(--ink-green-700); }
+
 /* 输入区域 */
 .ai-input-area {
   display: flex;
