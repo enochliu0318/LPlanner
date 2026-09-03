@@ -359,10 +359,10 @@ async function sendAiMessage(feature, customInput) {
   let userText = customInput;
   if (!userText) {
     const labels = {
-      polish: "✎ 润色当前教学内容",
-      expand: "↔ 扩展当前教学内容",
-      outline: "≡ 生成教学大纲",
-      objectives: "◎ 生成教学目标",
+      polish: "✎ Polish content",
+      expand: "↔ Expand content",
+      outline: "≡ Generate outline",
+      objectives: "◎ Generate objectives",
     };
     userText = labels[feature] || feature;
   }

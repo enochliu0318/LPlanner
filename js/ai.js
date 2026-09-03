@@ -137,51 +137,46 @@ async function callGroq(systemPrompt, userPrompt, config) {
   }
 }
 
-// 构建系统提示词
+// 构建系统提示词（全部使用英文输出）
 function buildSystemPrompt(feature, context = {}) {
   const prompts = {
-    [AI_FEATURES.POLISH]: `你是一位专业的英语教案编辑。请对以下教学内容进行润色，使其更清晰、更专业。保持原意不变，优化语言表达。只输出润色后的内容，不要解释。`,
+    [AI_FEATURES.POLISH]: `You are a professional English lesson plan editor. Polish the following teaching content to make it clearer and more professional. Keep the original meaning intact, optimize language expression. Output only the polished content without explanation. Output in English.`,
 
-    [AI_FEATURES.EXPAND]: `你是一位专业的英语教案设计师。请根据以下教学主题，扩展和丰富教学内容。提供具体的教学步骤、活动和例子。用中文输出。`,
+    [AI_FEATURES.EXPAND]: `You are a professional English lesson plan designer. Based on the following teaching topic, expand and enrich the content. Provide specific teaching steps, activities, and examples. Output in English.`,
 
-    [AI_FEATURES.GENERATE_OUTLINE]: `你是一位专业的英语教案设计师。请根据以下课程信息，生成一份详细的教学大纲（教学内容及过程）。
+    [AI_FEATURES.GENERATE_OUTLINE]: `You are a professional English lesson plan designer. Based on the following course information, generate a detailed teaching outline (teaching content and process).
 
-要求：
-1. 按讲课顺序列出教学步骤
-2. 每个步骤包含具体活动和时间分配
-3. 使用项目符号列表格式（• 一级条目，◦ 二级条目）
-4. 用中文输出`,
+Requirements:
+1. List teaching steps in lecture order
+2. Each step includes specific activities and time allocation
+3. Use bullet point format (• main items, ◦ sub-items)
+4. Output in English`,
 
-    [AI_FEATURES.GENERATE_OBJECTIVES]: `你是一位专业的英语教案设计师。请根据以下课程信息，生成3-5条具体、可衡量的教学目标。
+    [AI_FEATURES.GENERATE_OBJECTIVES]: `You are a professional English lesson plan designer. Based on the following course information, generate 3-5 specific, measurable learning objectives.
 
-要求：
-1. 使用行为动词（如"学生能够..."）
-2. 每条目标具体可衡量
-3. 用中文输出，每条一行`,
-
-    [AI_FEATURES.TRANSLATE]: `你是一位专业的英语教育翻译。请将以下教学内容在中英文之间翻译。保持教育专业术语的准确性。只输出翻译结果，不要解释。`,
+Requirements:
+1. Use action verbs (e.g., "Students will be able to...")
+2. Each objective should be specific and measurable
+3. Output in English, one per line`,
   };
 
   return prompts[feature] || "";
 }
 
-// 构建用户提示词
+// 构建用户提示词（英文）
 function buildUserPrompt(feature, content, context = {}) {
   switch (feature) {
     case AI_FEATURES.POLISH:
-      return `请润色以下教学内容：\n\n${content}`;
+      return `Please polish the following teaching content:\n\n${content}`;
 
     case AI_FEATURES.EXPAND:
-      return `教学主题：${context.lessonTitle || "未指定"}\n课程名称：${context.courseName || "未指定"}\n\n请扩展以下教学内容：\n\n${content}`;
+      return `Lesson title: ${context.lessonTitle || "Not specified"}\nCourse: ${context.courseName || "Not specified"}\n\nPlease expand the following content:\n\n${content}`;
 
     case AI_FEATURES.GENERATE_OUTLINE:
-      return `课程名称：${context.courseName || "未指定"}\n课题：${context.lessonTitle || "未指定"}\n学时：${context.hours || "1"}\n\n请生成教学大纲：`;
+      return `Course: ${context.courseName || "Not specified"}\nLesson: ${context.lessonTitle || "Not specified"}\nHours: ${context.hours || "1"}\n\nGenerate a teaching outline:`;
 
     case AI_FEATURES.GENERATE_OBJECTIVES:
-      return `课程名称：${context.courseName || "未指定"}\n课题：${context.lessonTitle || "未指定"}\n\n请生成教学目标：`;
-
-    case AI_FEATURES.TRANSLATE:
-      return `请翻译：\n\n${content}`;
+      return `Course: ${context.courseName || "Not specified"}\nLesson: ${context.lessonTitle || "Not specified"}\n\nGenerate learning objectives:`;
 
     default:
       return content;
