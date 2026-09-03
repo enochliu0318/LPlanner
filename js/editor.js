@@ -468,7 +468,6 @@ function openAiSettings() {
     `<option value="${m.id}" ${m.id === config.model ? "selected" : ""}>${m.name}</option>`
   ).join("");
   $("#ai-api-key").value = config.apiKey || "";
-  $("#ai-use-proxy").checked = config.useProxy !== false;
   $("#ai-modal").style.display = "flex";
 }
 
@@ -482,8 +481,7 @@ $("#ai-cancel-settings").addEventListener("click", closeAiSettings);
 $("#ai-save-settings").addEventListener("click", () => {
   const model = $("#ai-model-select").value;
   const apiKey = $("#ai-api-key").value.trim();
-  const useProxy = $("#ai-use-proxy").checked;
-  saveAiConfig({ model, apiKey, useProxy });
+  saveAiConfig({ model, apiKey });
   closeAiSettings();
   showToast("AI 设置已保存");
 });
@@ -500,38 +498,32 @@ $("#ai-test-btn").addEventListener("click", async () => {
     const config = {
       model: $("#ai-model-select").value,
       apiKey: $("#ai-api-key").value.trim(),
-      useProxy: $("#ai-use-proxy").checked,
     };
-    const url = `https://api-inference.huggingface.co/models/${config.model}`;
-    const headers = { "Content-Type": "application/json" };
+    const headers = {
+      "Content-Type": "application/json",
+      "HTTP-Referer": window.location.origin,
+      "X-Title": "Lesson Planner",
+    };
     if (config.apiKey) {
       headers["Authorization"] = `Bearer ${config.apiKey}`;
     }
 
-    const body = JSON.stringify({ inputs: "Hello", parameters: { max_new_tokens: 10 } });
-    let response;
-
-    if (config.useProxy) {
-      const proxyUrl = "https://corsproxy.io/?" + encodeURIComponent(url);
-      response = await fetch(proxyUrl, {
-        method: "POST",
-        headers,
-        body,
-      });
-    } else {
-      response = await fetch(url, {
-        method: "POST",
-        headers,
-        body,
-      });
-    }
+    const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+      method: "POST",
+      headers,
+      body: JSON.stringify({
+        model: config.model,
+        messages: [{ role: "user", content: "Hello" }],
+        max_tokens: 10,
+      }),
+    });
 
     if (response.ok) {
       result.textContent = "连接成功！";
       result.className = "ai-test-result success";
     } else {
       const err = await response.json().catch(() => ({}));
-      result.textContent = `连接失败: ${err.error || response.status}`;
+      result.textContent = `连接失败: ${err.error?.message || response.status}`;
       result.className = "ai-test-result error";
     }
   } catch (err) {

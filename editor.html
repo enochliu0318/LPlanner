@@ -4,7 +4,7 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>编辑教案 · 备课本</title>
-<link rel="stylesheet" href="css/style.css?v=15" />
+<link rel="stylesheet" href="css/style.css?v=16" />
 </head>
 <body>
 <div class="app-shell">
@@ -203,15 +203,8 @@
       </div>
       <div class="field">
         <label for="ai-api-key">API Key（可选）</label>
-        <input type="password" id="ai-api-key" placeholder="hf_..." />
-        <p class="hint">免费 API Key 在 <a href="https://huggingface.co/settings/tokens" target="_blank" rel="noopener">huggingface.co/settings/tokens</a> 创建。不填也可使用，但速率受限。</p>
-      </div>
-      <div class="field">
-        <label class="checkbox-label">
-          <input type="checkbox" id="ai-use-proxy" checked />
-          <span>使用代理（解决网络连接问题）</span>
-        </label>
-        <p class="hint">如果遇到"网络连接失败"错误，请保持此选项开启。代理通过 corsproxy.io 转发请求。</p>
+        <input type="password" id="ai-api-key" placeholder="sk-or-..." />
+        <p class="hint">免费 API Key 在 <a href="https://openrouter.ai/settings/keys" target="_blank" rel="noopener">openrouter.ai/settings/keys</a> 创建。不填也可使用，但速率受限。</p>
       </div>
       <div class="ai-test-row">
         <button type="button" class="btn btn-sm btn-ghost" id="ai-test-btn">测试连接</button>
@@ -230,6 +223,6 @@
 
 <div class="toast" id="toast"></div>
 
-<script type="module" src="js/editor.js?v=15"></script>
+<script type="module" src="js/editor.js?v=16"></script>
 </body>
 </html>

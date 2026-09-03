@@ -1,43 +1,45 @@
 /* ============================================================
     ai.js
-    AI 辅助备课功能 —— 前端直接调用 Hugging Face Inference API
+    AI 辅助备课功能 —— 前端直接调用 OpenRouter API
     （免费开源模型推理服务，无需后端服务器）
 
-    支持的模型：
-    - Qwen/Qwen2.5-72B-Instruct (中文能力强)
-    - mistralai/Mistral-7B-Instruct-v0.3 (综合能力强)
-    - meta-llama/Meta-Llama-3-8B-Instruct
+    使用 OpenRouter 的免费模型，支持 CORS，可直接在浏览器调用。
 
-    用户可在设置中填入自己的 Hugging Face API Key 以获得更高速率。
-    免费的 API Key 在 https://huggingface.co/settings/tokens 创建。
+    免费模型推荐：
+    - google/gemini-2.0-flash-001（Google，速度快）
+    - qwen/qwen-2-7b-instruct（阿里，中文好）
+    - meta-llama/llama-3.1-8b-instruct（Meta）
 
-    如果遇到网络错误，可开启"使用代理"选项。
+    用户可在设置中填入自己的 OpenRouter API Key 以获得更高速率。
+    免费的 API Key 在 https://openrouter.ai/settings/keys 创建。
     ============================================================ */
 
-const AI_STORAGE_KEY = "lesson_planner_ai_v2";
+const AI_STORAGE_KEY = "lesson_planner_ai_v3";
 
-// CORS 代理列表（用于解决浏览器跨域问题）
-const CORS_PROXIES = [
-  "https://corsproxy.io/?",
-  "https://api.allorigins.win/raw?url=",
-];
+// OpenRouter API 端点
+const OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions";
 
-// 可用模型列表
+// 可用模型列表（免费模型）
 export const AI_MODELS = [
   {
-    id: "Qwen/Qwen2.5-72B-Instruct",
-    name: "Qwen 2.5 72B（中文最佳）",
+    id: "google/gemini-2.0-flash-001",
+    name: "Gemini 2.0 Flash（推荐）",
+    description: "Google 开源，速度快，支持中文",
+  },
+  {
+    id: "qwen/qwen-2-7b-instruct",
+    name: "Qwen 2 7B",
     description: "阿里巴巴开源，中文理解能力强",
   },
   {
-    id: "mistralai/Mistral-7B-Instruct-v0.3",
-    name: "Mistral 7B（综合能力）",
-    description: "Mistral AI 开源，综合能力强",
+    id: "meta-llama/llama-3.1-8b-instruct",
+    name: "Llama 3.1 8B",
+    description: "Meta 开源，综合能力强",
   },
   {
-    id: "meta-llama/Meta-Llama-3-8B-Instruct",
-    name: "Llama 3 8B（英文最佳）",
-    description: "Meta 开源，英文能力强",
+    id: "microsoft/phi-3-medium-128k-instruct",
+    name: "Phi 3 Medium",
+    description: "微软开源，推理能力强",
   },
 ];
 
@@ -54,13 +56,10 @@ export const AI_FEATURES = {
 export function getAiConfig() {
   try {
     const raw = localStorage.getItem(AI_STORAGE_KEY);
-    if (!raw) return { apiKey: "", model: AI_MODELS[0].id, useProxy: true };
-    const config = JSON.parse(raw);
-    // 确保 useProxy 有默认值
-    if (config.useProxy === undefined) config.useProxy = true;
-    return config;
+    if (!raw) return { apiKey: "", model: AI_MODELS[0].id };
+    return JSON.parse(raw);
   } catch (err) {
-    return { apiKey: "", model: AI_MODELS[0].id, useProxy: true };
+    return { apiKey: "", model: AI_MODELS[0].id };
   }
 }
 
@@ -74,15 +73,13 @@ export function saveAiConfig(config) {
   }
 }
 
-// 构建 API URL
-function getApiUrl(model) {
-  return `https://api-inference.huggingface.co/models/${model}`;
-}
-
-// 调用 Hugging Face Inference API
-async function callHuggingFace(prompt, config) {
-  const url = getApiUrl(config.model);
-  const headers = { "Content-Type": "application/json" };
+// 调用 OpenRouter API
+async function callOpenRouter(systemPrompt, userPrompt, config) {
+  const headers = {
+    "Content-Type": "application/json",
+    "HTTP-Referer": window.location.origin,
+    "X-Title": "Lesson Planner",
+  };
   if (config.apiKey) {
     headers["Authorization"] = `Bearer ${config.apiKey}`;
   }
@@ -91,58 +88,43 @@ async function callHuggingFace(prompt, config) {
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), 120000); // 120 秒超时
 
-  const body = JSON.stringify({
-    inputs: prompt,
-    parameters: {
-      max_new_tokens: 1024,
-      temperature: 0.7,
-      top_p: 0.9,
-      do_sample: true,
-    },
-  });
-
   try {
-    let response;
-
-    if (config.useProxy) {
-      // 使用 CORS 代理
-      const proxyUrl = CORS_PROXIES[0] + encodeURIComponent(url);
-      response = await fetch(proxyUrl, {
-        method: "POST",
-        headers,
-        signal: controller.signal,
-        body,
-      });
-    } else {
-      // 直接调用
-      response = await fetch(url, {
-        method: "POST",
-        headers,
-        signal: controller.signal,
-        body,
-      });
-    }
+    const response = await fetch(OPENROUTER_URL, {
+      method: "POST",
+      headers,
+      signal: controller.signal,
+      body: JSON.stringify({
+        model: config.model,
+        messages: [
+          { role: "system", content: systemPrompt },
+          { role: "user", content: userPrompt },
+        ],
+        max_tokens: 1024,
+        temperature: 0.7,
+        top_p: 0.9,
+      }),
+    });
 
     clearTimeout(timeoutId);
 
     if (!response.ok) {
       const error = await response.json().catch(() => ({}));
-      throw new Error(error.error || `API 请求失败 (${response.status})`);
+      throw new Error(error.error?.message || `API 请求失败 (${response.status})`);
     }
 
     const data = await response.json();
-    // Hugging Face 返回格式: [{ generated_text: "..." }]
-    if (Array.isArray(data) && data.length > 0) {
-      return data[0].generated_text || "";
+    // OpenRouter 返回格式: { choices: [{ message: { content: "..." } }] }
+    if (data.choices && data.choices.length > 0) {
+      return data.choices[0].message?.content || "";
     }
-    return data.generated_text || JSON.stringify(data);
+    return JSON.stringify(data);
   } catch (err) {
     clearTimeout(timeoutId);
     if (err.name === "AbortError") {
       throw new Error("请求超时，请检查网络连接后重试");
     }
     if (err.message.includes("Failed to fetch") || err.message.includes("NetworkError")) {
-      throw new Error("网络连接失败，请检查网络或开启代理后重试");
+      throw new Error("网络连接失败，请检查网络后重试");
     }
     throw err;
   }
@@ -205,17 +187,7 @@ export async function callAI(feature, content, context = {}) {
   const systemPrompt = buildSystemPrompt(feature, context);
   const userPrompt = buildUserPrompt(feature, content, context);
 
-  // 构建完整提示词（Qwen 格式）
-  const fullPrompt = `<|im_start|>system
-${systemPrompt}
-<|im_end|>
-<|im_start|>user
-${userPrompt}
-<|im_end|>
-<|im_start|>assistant
-`;
-
-  return callHuggingFace(fullPrompt, config);
+  return callOpenRouter(systemPrompt, userPrompt, config);
 }
 
 // 内容润色
