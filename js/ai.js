@@ -23,12 +23,12 @@ export const AI_MODELS = [
   },
   {
     id: "mistralai/Mistral-7B-Instruct-v0.3",
-    name: "Mistral 7B",
+    name: "Mistral 7B（综合能力）",
     description: "Mistral AI 开源，综合能力强",
   },
   {
     id: "meta-llama/Meta-Llama-3-8B-Instruct",
-    name: "Llama 3 8B",
+    name: "Llama 3 8B（英文最佳）",
     description: "Meta 开源，英文能力强",
   },
 ];
@@ -76,31 +76,49 @@ async function callHuggingFace(prompt, config) {
     headers["Authorization"] = `Bearer ${config.apiKey}`;
   }
 
-  const response = await fetch(url, {
-    method: "POST",
-    headers,
-    body: JSON.stringify({
-      inputs: prompt,
-      parameters: {
-        max_new_tokens: 1024,
-        temperature: 0.7,
-        top_p: 0.9,
-        do_sample: true,
-      },
-    }),
-  });
+  // 设置超时
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 60000); // 60 秒超时
 
-  if (!response.ok) {
-    const error = await response.json().catch(() => ({}));
-    throw new Error(error.error || `API 请求失败 (${response.status})`);
-  }
+  try {
+    const response = await fetch(url, {
+      method: "POST",
+      headers,
+      signal: controller.signal,
+      body: JSON.stringify({
+        inputs: prompt,
+        parameters: {
+          max_new_tokens: 1024,
+          temperature: 0.7,
+          top_p: 0.9,
+          do_sample: true,
+        },
+      }),
+    });
 
-  const data = await response.json();
-  // Hugging Face 返回格式: [{ generated_text: "..." }]
-  if (Array.isArray(data) && data.length > 0) {
-    return data[0].generated_text || "";
+    clearTimeout(timeoutId);
+
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({}));
+      throw new Error(error.error || `API 请求失败 (${response.status})`);
+    }
+
+    const data = await response.json();
+    // Hugging Face 返回格式: [{ generated_text: "..." }]
+    if (Array.isArray(data) && data.length > 0) {
+      return data[0].generated_text || "";
+    }
+    return data.generated_text || JSON.stringify(data);
+  } catch (err) {
+    clearTimeout(timeoutId);
+    if (err.name === "AbortError") {
+      throw new Error("请求超时，请检查网络连接后重试");
+    }
+    if (err.message.includes("Failed to fetch") || err.message.includes("NetworkError")) {
+      throw new Error("网络连接失败，请检查网络或稍后重试");
+    }
+    throw err;
   }
-  return data.generated_text || JSON.stringify(data);
 }
 
 // 构建系统提示词

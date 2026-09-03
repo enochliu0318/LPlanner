@@ -4,7 +4,7 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>编辑教案 · 备课本</title>
-<link rel="stylesheet" href="css/style.css?v=12" />
+<link rel="stylesheet" href="css/style.css?v=14" />
 </head>
 <body>
 <div class="app-shell">
@@ -144,8 +144,8 @@
   <!-- ============ AI 悬浮对话窗口 ============ -->
   <button class="ai-fab" id="ai-fab" title="AI 辅助备课">
     <svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-      <path d="M12 2a10 10 0 0 1 10 10c0 5.523-4.477 10-10 10a10 10 0 0 1-10-10c0-5.523 4.477-10 10-10z"/>
-      <path d="M8 12h8M12 8v8"/>
+      <!-- <path d="M12 2a10 10 0 0 1 10 10c0 5.523-4.477 10-10 10a10 10 0 0 1-10-10c0-5.523 4.477-10 10-10z"/> -->
+      <path d="M6 12h12M12 6v12"/>
     </svg>
     <span class="ai-fab-badge" id="ai-fab-badge" style="display:none"></span>
   </button>
@@ -154,12 +154,6 @@
     <!-- 聊天头部 -->
     <div class="ai-chat-header">
       <div class="ai-chat-title">
-        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M12 2a10 10 0 0 1 10 10c0 5.523-4.477 10-10 10a10 10 0 0 1-10-10c0-5.523 4.477-10 10-10z"/>
-          <circle cx="9" cy="10" r="1" fill="currentColor"/>
-          <circle cx="15" cy="10" r="1" fill="currentColor"/>
-          <path d="M9 15h6"/>
-        </svg>
         <span>AI 备课助手</span>
       </div>
       <div class="ai-chat-tools">
@@ -212,6 +206,10 @@
         <input type="password" id="ai-api-key" placeholder="hf_..." />
         <p class="hint">免费 API Key 在 <a href="https://huggingface.co/settings/tokens" target="_blank" rel="noopener">huggingface.co/settings/tokens</a> 创建。不填也可使用，但速率受限。</p>
       </div>
+      <div class="ai-test-row">
+        <button type="button" class="btn btn-sm btn-ghost" id="ai-test-btn">测试连接</button>
+        <span class="ai-test-result" id="ai-test-result"></span>
+      </div>
       <div class="ai-modal-actions">
         <button type="button" class="btn btn-primary" id="ai-save-settings">保存</button>
         <button type="button" class="btn btn-ghost" id="ai-cancel-settings">取消</button>
@@ -225,6 +223,6 @@
 
 <div class="toast" id="toast"></div>
 
-<script type="module" src="js/editor.js?v=12"></script>
+<script type="module" src="js/editor.js?v=14"></script>
 </body>
 </html>

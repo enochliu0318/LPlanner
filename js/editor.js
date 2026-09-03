@@ -486,6 +486,47 @@ $("#ai-save-settings").addEventListener("click", () => {
   showToast("AI 设置已保存");
 });
 
+// 测试连接
+$("#ai-test-btn").addEventListener("click", async () => {
+  const result = $("#ai-test-result");
+  const btn = $("#ai-test-btn");
+  result.textContent = "测试中...";
+  result.className = "ai-test-result";
+  btn.disabled = true;
+
+  try {
+    const config = {
+      model: $("#ai-model-select").value,
+      apiKey: $("#ai-api-key").value.trim(),
+    };
+    const url = `https://api-inference.huggingface.co/models/${config.model}`;
+    const headers = { "Content-Type": "application/json" };
+    if (config.apiKey) {
+      headers["Authorization"] = `Bearer ${config.apiKey}`;
+    }
+
+    const response = await fetch(url, {
+      method: "POST",
+      headers,
+      body: JSON.stringify({ inputs: "Hello", parameters: { max_new_tokens: 10 } }),
+    });
+
+    if (response.ok) {
+      result.textContent = "连接成功！";
+      result.className = "ai-test-result success";
+    } else {
+      const err = await response.json().catch(() => ({}));
+      result.textContent = `连接失败: ${err.error || response.status}`;
+      result.className = "ai-test-result error";
+    }
+  } catch (err) {
+    result.textContent = `连接失败: ${err.message}`;
+    result.className = "ai-test-result error";
+  } finally {
+    btn.disabled = false;
+  }
+});
+
 /* ---------------- 工具函数 ---------------- */
 
 function escapeHtml(s) {

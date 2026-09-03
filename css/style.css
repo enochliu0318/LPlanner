@@ -206,7 +206,7 @@ button, input, textarea, select {
 .app-main {
   flex: 1;
   min-width: 0;
-  padding: 36px 44px 80px;
+  padding: 36px 44px 40px;
 }
 
 .page-head {
@@ -553,12 +553,12 @@ input:focus, textarea:focus, select:focus {
 /* 悬浮按钮 */
 .ai-fab {
   position: fixed;
-  bottom: 24px;
+  bottom: 60px;
   right: 24px;
-  width: 56px;
-  height: 56px;
+  width: 46px;
+  height: 46px;
   border-radius: 50%;
-  background: var(--ink-green-700);
+  background: var(--ink-green-800);
   color: #fff;
   border: none;
   cursor: pointer;
@@ -589,10 +589,10 @@ input:focus, textarea:focus, select:focus {
 /* 聊天窗口 */
 .ai-chat {
   position: fixed;
-  bottom: 90px;
+  bottom: 120px;
   right: 24px;
   width: 380px;
-  max-height: 560px;
+  max-height: 600px;
   background: var(--paper);
   border-radius: var(--radius-m);
   box-shadow: 0 8px 30px rgba(0, 0, 0, 0.18);
@@ -860,6 +860,26 @@ input:focus, textarea:focus, select:focus {
   margin-top: 20px;
 }
 
+.ai-test-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 8px;
+}
+
+.ai-test-result {
+  font-size: 12px;
+  color: var(--ink-soft);
+}
+
+.ai-test-result.success {
+  color: var(--ink-green-700);
+}
+
+.ai-test-result.error {
+  color: var(--pencil-red);
+}
+
 /* 移动端适配 */
 @media (max-width: 600px) {
   .ai-fab {
@@ -906,7 +926,7 @@ input:focus, textarea:focus, select:focus {
 
 /* ---------- 打印视图（导出 PDF 用） ---------- */
 
-#print-root { display: none; }
+#print-root { display: none !important; }
 
 @media print {
   .app-rail, .app-main > *:not(#print-root) { display: none !important; }
