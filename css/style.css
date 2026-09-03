@@ -841,7 +841,7 @@ input:focus, textarea:focus, select:focus {
   border-radius: var(--radius-m);
   padding: 24px;
   width: 90%;
-  max-width: 420px;
+  max-width: 440px;
   box-shadow: 0 8px 30px rgba(0, 0, 0, 0.2);
 }
 
@@ -851,6 +851,34 @@ input:focus, textarea:focus, select:focus {
 
 .ai-modal-content .field {
   margin-bottom: 16px;
+}
+
+.ai-setup-notice {
+  background: var(--kraft);
+  border: 1px solid var(--kraft-line);
+  border-radius: var(--radius-s);
+  padding: 14px 16px;
+  margin-bottom: 18px;
+  font-size: 13px;
+}
+
+.ai-setup-notice strong {
+  display: block;
+  margin-bottom: 8px;
+  font-size: 14px;
+}
+
+.ai-setup-notice ol {
+  margin: 8px 0;
+  padding-left: 18px;
+}
+
+.ai-setup-notice li {
+  margin: 4px 0;
+}
+
+.ai-setup-notice a {
+  color: var(--ink-green-700);
 }
 
 .ai-modal-actions {

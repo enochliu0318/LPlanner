@@ -4,7 +4,7 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>编辑教案 · 备课本</title>
-<link rel="stylesheet" href="css/style.css?v=17" />
+<link rel="stylesheet" href="css/style.css?v=18" />
 </head>
 <body>
 <div class="app-shell">
@@ -197,19 +197,34 @@
     <div class="ai-modal-backdrop" id="ai-modal-backdrop"></div>
     <div class="ai-modal-content">
       <h3>AI 设置</h3>
+
+      <div class="ai-setup-notice" id="ai-setup-notice">
+        <strong>🚀 开始使用 AI</strong>
+        <p>Groq 提供免费的 AI 推理服务，但需要 API Key。</p>
+        <ol>
+          <li>访问 <a href="https://console.groq.com/keys" target="_blank" rel="noopener">console.groq.com/keys</a></li>
+          <li>登录/注册账号（支持 GitHub 登录）</li>
+          <li>点击 "Create API Key" 创建 Key</li>
+          <li>复制 Key 粘贴到下方</li>
+        </ol>
+        <p class="hint">免费额度：每分钟 30 次请求，每天 14,400 次请求</p>
+      </div>
+
+      <div class="field">
+        <label for="ai-api-key">Groq API Key <span style="color:var(--pencil-red)">*</span></label>
+        <input type="password" id="ai-api-key" placeholder="gsk_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx" />
+      </div>
+
       <div class="field">
         <label for="ai-model-select">模型选择</label>
         <select id="ai-model-select"></select>
       </div>
-      <div class="field">
-        <label for="ai-api-key">API Key（可选）</label>
-        <input type="password" id="ai-api-key" placeholder="gsk_..." />
-        <p class="hint">免费 API Key 在 <a href="https://console.groq.com/keys" target="_blank" rel="noopener">console.groq.com/keys</a> 创建。不填也可使用，但速率受限。</p>
-      </div>
+
       <div class="ai-test-row">
         <button type="button" class="btn btn-sm btn-ghost" id="ai-test-btn">测试连接</button>
         <span class="ai-test-result" id="ai-test-result"></span>
       </div>
+
       <div class="ai-modal-actions">
         <button type="button" class="btn btn-primary" id="ai-save-settings">保存</button>
         <button type="button" class="btn btn-ghost" id="ai-cancel-settings">取消</button>
@@ -223,6 +238,6 @@
 
 <div class="toast" id="toast"></div>
 
-<script type="module" src="js/editor.js?v=17"></script>
+<script type="module" src="js/editor.js?v=18"></script>
 </body>
 </html>
