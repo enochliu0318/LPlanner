@@ -1,9 +1,9 @@
-import { Storage } from "./storage.js?v=11";
-import { exportPlanToDocx } from "./docx-export.js?v=11";
-import { exportPlanToPdf } from "./pdf-export.js?v=11";
-import { Tabs, NEW_TAB, renderRailTabs } from "./tabs.js?v=11";
-import { buildDocumentModel } from "./document-model.js?v=11";
-import { callAI, AI_MODELS, getAiConfig, saveAiConfig } from "./ai.js?v=11";
+import { Storage } from "./storage.js?v=25";
+import { exportPlanToDocx } from "./docx-export.js?v=25";
+import { exportPlanToPdf } from "./pdf-export.js?v=25";
+import { Tabs, NEW_TAB, renderRailTabs } from "./tabs.js?v=25";
+import { buildDocumentModel } from "./document-model.js?v=25";
+import { sendMessage, AI_MODELS, getAiConfig, saveAiConfig } from "./ai.js?v=25";
 
 const params = new URLSearchParams(location.search);
 const existingId = params.get("id");
@@ -274,18 +274,17 @@ $("#export-docx-btn").addEventListener("click", async () => {
   }
 });
 
-/* ---------------- AI 悬浮对话窗口 ---------------- */
+/* ---------------- AI Chat ---------------- */
 
 let aiChatOpen = false;
 let aiIsLoading = false;
+let aiHistory = [];
 
-// 打开/关闭聊天窗口
+// Toggle chat window
 $("#ai-fab").addEventListener("click", () => {
   aiChatOpen = !aiChatOpen;
   $("#ai-chat").style.display = aiChatOpen ? "flex" : "none";
-  if (aiChatOpen) {
-    $("#ai-input").focus();
-  }
+  if (aiChatOpen) $("#ai-input").focus();
 });
 
 $("#ai-chat-close").addEventListener("click", () => {
@@ -293,47 +292,29 @@ $("#ai-chat-close").addEventListener("click", () => {
   $("#ai-chat").style.display = "none";
 });
 
-// 添加消息到聊天
-function addMessage(role, content, actions) {
+// Add message to chat
+function addMessage(role, content) {
   const messages = $("#ai-messages");
   const msg = document.createElement("div");
-  msg.className = `ai-message ai-message-${role}`;
-
+  msg.className = "ai-message ai-message-" + role;
   const contentDiv = document.createElement("div");
   contentDiv.className = "ai-message-content";
   contentDiv.textContent = content;
   msg.appendChild(contentDiv);
-
-  if (actions && actions.length > 0) {
-    const actionsDiv = document.createElement("div");
-    actionsDiv.className = "ai-message-actions";
-    actions.forEach(action => {
-      const btn = document.createElement("button");
-      btn.type = "button";
-      btn.textContent = action.label;
-      btn.addEventListener("click", action.handler);
-      actionsDiv.appendChild(btn);
-    });
-    msg.appendChild(actionsDiv);
-  }
-
   messages.appendChild(msg);
   messages.scrollTop = messages.scrollHeight;
-  return msg;
 }
 
-// 显示输入中动画
+// Show typing indicator
 function showTyping() {
   const messages = $("#ai-messages");
   const msg = document.createElement("div");
   msg.className = "ai-message ai-message-ai";
   msg.id = "ai-typing";
-
   const typing = document.createElement("div");
   typing.className = "ai-typing";
   typing.innerHTML = '<span class="ai-typing-dot"></span><span class="ai-typing-dot"></span><span class="ai-typing-dot"></span>';
   msg.appendChild(typing);
-
   messages.appendChild(msg);
   messages.scrollTop = messages.scrollHeight;
 }
@@ -343,129 +324,45 @@ function hideTyping() {
   if (typing) typing.remove();
 }
 
-// 发送消息
-async function sendAiMessage(feature, customInput) {
+// Send message
+async function sendAiMessage() {
   if (aiIsLoading) return;
+  const input = $("#ai-input").value.trim();
+  if (!input) return;
+
+  $("#ai-input").value = "";
+  aiHistory.push({ role: "user", content: input });
+  addMessage("user", input);
+  showTyping();
   aiIsLoading = true;
 
-  readFormIntoPlan();
-  const context = {
-    courseName: plan.courseName,
-    lessonTitle: plan.lessonTitle,
-    hours: plan.hours,
-  };
-
-  // 确定用户显示文本
-  let userText = customInput;
-  if (!userText) {
-    const labels = {
-      polish: "✎ Polish content",
-      expand: "↔ Expand content",
-      outline: "≡ Generate outline",
-      objectives: "◎ Generate objectives",
-    };
-    userText = labels[feature] || feature;
-  }
-
-  // 添加用户消息
-  addMessage("user", userText);
-
-  // 显示输入中
-  showTyping();
-
   try {
-    let result;
-    switch (feature) {
-      case "polish":
-        result = await callAI("polish", plan.contentHtml || "");
-        break;
-      case "expand":
-        result = await callAI("expand", plan.contentHtml || "", context);
-        break;
-      case "outline":
-        result = await callAI("generate_outline", "", context);
-        break;
-      case "objectives":
-        result = await callAI("generate_objectives", "", context);
-        break;
-      default:
-        // 自定义问题
-        result = await callAI("polish", customInput, context);
-        break;
-    }
-
+    const result = await sendMessage(input, aiHistory.slice(0, -1));
+    aiHistory.push({ role: "assistant", content: result });
     hideTyping();
-
-    // 根据功能类型决定"使用"按钮行为
-    const isOutline = feature === "outline";
-    const isObjectives = feature === "objectives";
-
-    addMessage("ai", result, [
-      {
-        label: "使用",
-        handler: () => {
-          applyAiResult(result, isOutline ? "outline" : isObjectives ? "objectives" : "content");
-        },
-      },
-    ]);
+    addMessage("ai", result);
   } catch (err) {
     hideTyping();
-    addMessage("error", "调用失败：" + err.message);
+    addMessage("error", "Error: " + err.message);
   } finally {
     aiIsLoading = false;
   }
 }
 
-// 应用 AI 结果到表单
-function applyAiResult(result, type) {
-  if (type === "objectives") {
-    $("#objectives").value = result;
-    showToast("已应用到教学目标");
-  } else {
-    // 将纯文本结果转为简单 HTML 列表
-    const lines = result.split("\n").filter(l => l.trim());
-    const html = lines.map(l => {
-      const text = escapeHtml(l.replace(/^[•◦▪\-\d.]\s*/, ""));
-      return `<li>${text}</li>`;
-    }).join("");
-    $("#content-editor").innerHTML = `<ul>${html}</ul>`;
-    showToast("已应用到教学内容");
-  }
-}
-
-// 快捷功能按钮
-document.querySelectorAll(".ai-quick-btn").forEach(btn => {
-  btn.addEventListener("click", () => {
-    const feature = btn.dataset.ai;
-    sendAiMessage(feature);
-  });
-});
-
-// 发送按钮
-$("#ai-send").addEventListener("click", () => {
-  const input = $("#ai-input").value.trim();
-  if (!input) return;
-  $("#ai-input").value = "";
-  sendAiMessage("custom", input);
-});
-
-// 回车发送
+$("#ai-send").addEventListener("click", sendAiMessage);
 $("#ai-input").addEventListener("keydown", (e) => {
   if (e.key === "Enter" && !e.shiftKey) {
     e.preventDefault();
-    const input = e.target.value.trim();
-    if (!input) return;
-    e.target.value = "";
-    sendAiMessage("custom", input);
+    sendAiMessage();
   }
 });
 
-// AI 设置弹窗
+// AI Settings modal
 function openAiSettings() {
   const config = getAiConfig();
   const select = $("#ai-model-select");
   select.innerHTML = AI_MODELS.map(m =>
-    `<option value="${m.id}" ${m.id === config.model ? "selected" : ""}>${m.name}</option>`
+    '<option value="' + m.id + '"' + (m.id === config.model ? " selected" : "") + ">" + m.name + "</option>"
   ).join("");
   $("#ai-api-key").value = config.apiKey || "";
   $("#ai-model-custom").value = "";
@@ -480,33 +377,29 @@ $("#ai-chat-settings").addEventListener("click", openAiSettings);
 $("#ai-modal-backdrop").addEventListener("click", closeAiSettings);
 $("#ai-cancel-settings").addEventListener("click", closeAiSettings);
 $("#ai-save-settings").addEventListener("click", () => {
-  // 优先使用自定义模型 ID，否则使用下拉列表选择的模型
   const customModel = $("#ai-model-custom").value.trim();
   const model = customModel || $("#ai-model-select").value;
   const apiKey = $("#ai-api-key").value.trim();
   saveAiConfig({ model, apiKey });
   closeAiSettings();
-  showToast("AI 设置已保存");
+  showToast("AI settings saved");
 });
 
-// 测试连接
+// Test connection
 $("#ai-test-btn").addEventListener("click", async () => {
   const result = $("#ai-test-result");
   const btn = $("#ai-test-btn");
-  result.textContent = "测试中...";
+  result.textContent = "Testing...";
   result.className = "ai-test-result";
   btn.disabled = true;
 
   try {
-    const customModel = $("#ai-model-custom").value.trim();
     const config = {
-      model: customModel || $("#ai-model-select").value,
+      model: $("#ai-model-select").value,
       apiKey: $("#ai-api-key").value.trim(),
     };
     const headers = { "Content-Type": "application/json" };
-    if (config.apiKey) {
-      headers["Authorization"] = `Bearer ${config.apiKey}`;
-    }
+    if (config.apiKey) headers["Authorization"] = "Bearer " + config.apiKey;
 
     const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
       method: "POST",
@@ -519,15 +412,15 @@ $("#ai-test-btn").addEventListener("click", async () => {
     });
 
     if (response.ok) {
-      result.textContent = "连接成功！";
+      result.textContent = "Success!";
       result.className = "ai-test-result success";
     } else {
       const err = await response.json().catch(() => ({}));
-      result.textContent = `连接失败: ${err.error?.message || response.status}`;
+      result.textContent = "Failed: " + (err.error?.message || response.status);
       result.className = "ai-test-result error";
     }
   } catch (err) {
-    result.textContent = `连接失败: ${err.message}`;
+    result.textContent = "Failed: " + err.message;
     result.className = "ai-test-result error";
   } finally {
     btn.disabled = false;
