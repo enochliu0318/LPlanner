@@ -23,29 +23,34 @@ const GROQ_URL = "https://api.groq.com/openai/v1/chat/completions";
 // 请访问 https://console.groq.com/playground 查看最新可用模型
 export const AI_MODELS = [
   {
-    id: "llama-3.3-70b-versatile",
-    name: "Llama 3.3 70B（推荐）",
-    description: "Meta 开源，综合能力强",
+    id: "qwen3.8-27b",
+    name: "Qwen 3.8 27B（推荐）",
+    description: "阿里巴巴开源，中文能力强",
   },
   {
-    id: "llama-3.1-8b-instant",
-    name: "Llama 3.1 8B（快）",
-    description: "Meta 开源，速度最快",
+    id: "qwen3.6-27b",
+    name: "Qwen 3.6 27B",
+    description: "阿里巴巴开源",
   },
   {
-    id: "llama3-70b-8192",
-    name: "Llama 3 70B",
-    description: "Meta Llama 3 70B",
+    id: "gpt-oss-120b",
+    name: "GPT OSS 120B",
+    description: "OpenAI 开源，综合能力强",
   },
   {
-    id: "llama3-8b-8192",
-    name: "Llama 3 8B",
-    description: "Meta Llama 3 8B",
+    id: "gpt-oss20b",
+    name: "GPT OSS 20B",
+    description: "OpenAI 开源，速度较快",
   },
   {
-    id: "mixtral-8x7b-32768",
-    name: "Mixtral 8x7B",
-    description: "Mistral 开源，混合专家模型",
+    id: "compound",
+    name: "Compound",
+    description: "复合模型",
+  },
+  {
+    id: "compound-mini",
+    name: "Compound Mini",
+    description: "复合模型（轻量）",
   },
 ];
 

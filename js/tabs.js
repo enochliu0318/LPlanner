@@ -6,7 +6,7 @@
    其中 "new" 是「新建教案（尚未保存）」的占位标签。
    ============================================================ */
 
-import { Storage } from "./storage.js?v=20";
+import { Storage } from "./storage.js?v=21";
 
 const TABS_KEY = "lesson_planner_tabs_v1";
 export const NEW_TAB = "new";

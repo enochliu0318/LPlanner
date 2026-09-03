@@ -1,5 +1,5 @@
-import { Storage } from "./storage.js?v=20";
-import { renderRailTabs } from "./tabs.js?v=20";
+import { Storage } from "./storage.js?v=21";
+import { renderRailTabs } from "./tabs.js?v=21";
 
 const grid = document.getElementById("card-grid");
 const emptyState = document.getElementById("empty-state");
