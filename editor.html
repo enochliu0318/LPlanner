@@ -4,7 +4,7 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>编辑教案 · 备课本</title>
-<link rel="stylesheet" href="css/style.css?v=10" />
+<link rel="stylesheet" href="css/style.css?v=12" />
 </head>
 <body>
 <div class="app-shell">
@@ -132,20 +132,92 @@
         </div>
       </section>
 
-      <section class="form-section">
-        <div class="ai-placeholder">
-          <span>AI 辅助备课功能尚未启用 — 后续可在此接入教案初稿生成 / 内容润色。</span>
-          <button type="button" class="btn btn-sm" disabled>即将上线</button>
-        </div>
-      </section>
-
     </form>
 
     <div class="save-bar">
       <span class="save-status" id="save-status">尚未保存</span>
       <button class="btn btn-primary" id="save-btn">保存教案</button>
     </div>
+
   </main>
+
+  <!-- ============ AI 悬浮对话窗口 ============ -->
+  <button class="ai-fab" id="ai-fab" title="AI 辅助备课">
+    <svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M12 2a10 10 0 0 1 10 10c0 5.523-4.477 10-10 10a10 10 0 0 1-10-10c0-5.523 4.477-10 10-10z"/>
+      <path d="M8 12h8M12 8v8"/>
+    </svg>
+    <span class="ai-fab-badge" id="ai-fab-badge" style="display:none"></span>
+  </button>
+
+  <div class="ai-chat" id="ai-chat" style="display:none">
+    <!-- 聊天头部 -->
+    <div class="ai-chat-header">
+      <div class="ai-chat-title">
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 2a10 10 0 0 1 10 10c0 5.523-4.477 10-10 10a10 10 0 0 1-10-10c0-5.523 4.477-10 10-10z"/>
+          <circle cx="9" cy="10" r="1" fill="currentColor"/>
+          <circle cx="15" cy="10" r="1" fill="currentColor"/>
+          <path d="M9 15h6"/>
+        </svg>
+        <span>AI 备课助手</span>
+      </div>
+      <div class="ai-chat-tools">
+        <button class="ai-chat-tool" id="ai-chat-settings" title="设置">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+          </svg>
+        </button>
+        <button class="ai-chat-tool" id="ai-chat-close" title="关闭">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M18 6L6 18M6 6l12 12"/>
+          </svg>
+        </button>
+      </div>
+    </div>
+
+    <!-- 快捷功能 -->
+    <div class="ai-quick-actions">
+      <button type="button" class="ai-quick-btn" data-ai="polish">✎ 润色内容</button>
+      <button type="button" class="ai-quick-btn" data-ai="expand">↔ 扩展内容</button>
+      <button type="button" class="ai-quick-btn" data-ai="outline">≡ 生成大纲</button>
+      <button type="button" class="ai-quick-btn" data-ai="objectives">◎ 生成目标</button>
+    </div>
+
+    <!-- 消息区域 -->
+    <div class="ai-messages" id="ai-messages"></div>
+
+    <!-- 输入区域 -->
+    <div class="ai-input-area">
+      <textarea id="ai-input" placeholder="输入问题或选择上方快捷功能..." rows="2"></textarea>
+      <button class="ai-send-btn" id="ai-send" title="发送">
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"/>
+        </svg>
+      </button>
+    </div>
+  </div>
+
+  <!-- AI 设置弹窗 -->
+  <div class="ai-modal" id="ai-modal" style="display:none">
+    <div class="ai-modal-backdrop" id="ai-modal-backdrop"></div>
+    <div class="ai-modal-content">
+      <h3>AI 设置</h3>
+      <div class="field">
+        <label for="ai-model-select">模型选择</label>
+        <select id="ai-model-select"></select>
+      </div>
+      <div class="field">
+        <label for="ai-api-key">API Key（可选）</label>
+        <input type="password" id="ai-api-key" placeholder="hf_..." />
+        <p class="hint">免费 API Key 在 <a href="https://huggingface.co/settings/tokens" target="_blank" rel="noopener">huggingface.co/settings/tokens</a> 创建。不填也可使用，但速率受限。</p>
+      </div>
+      <div class="ai-modal-actions">
+        <button type="button" class="btn btn-primary" id="ai-save-settings">保存</button>
+        <button type="button" class="btn btn-ghost" id="ai-cancel-settings">取消</button>
+      </div>
+    </div>
+  </div>
 </div>
 
 <!-- ============ 打印视图（导出 PDF 时填充并显示） ============ -->
@@ -153,6 +225,6 @@
 
 <div class="toast" id="toast"></div>
 
-<script type="module" src="js/editor.js?v=10"></script>
+<script type="module" src="js/editor.js?v=12"></script>
 </body>
 </html>

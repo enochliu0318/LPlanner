@@ -1,8 +1,9 @@
-import { Storage } from "./storage.js?v=10";
-import { exportPlanToDocx } from "./docx-export.js?v=10";
-import { exportPlanToPdf } from "./pdf-export.js?v=10";
-import { Tabs, NEW_TAB, renderRailTabs } from "./tabs.js?v=10";
-import { buildDocumentModel } from "./document-model.js?v=10";
+import { Storage } from "./storage.js?v=11";
+import { exportPlanToDocx } from "./docx-export.js?v=11";
+import { exportPlanToPdf } from "./pdf-export.js?v=11";
+import { Tabs, NEW_TAB, renderRailTabs } from "./tabs.js?v=11";
+import { buildDocumentModel } from "./document-model.js?v=11";
+import { callAI, AI_MODELS, getAiConfig, saveAiConfig } from "./ai.js?v=11";
 
 const params = new URLSearchParams(location.search);
 const existingId = params.get("id");
@@ -271,6 +272,218 @@ $("#export-docx-btn").addEventListener("click", async () => {
     console.error(err);
     alert("导出 Word 失败，请检查网络是否可以访问 docx 组件（首次导出需要联网加载一次）。");
   }
+});
+
+/* ---------------- AI 悬浮对话窗口 ---------------- */
+
+let aiChatOpen = false;
+let aiIsLoading = false;
+
+// 打开/关闭聊天窗口
+$("#ai-fab").addEventListener("click", () => {
+  aiChatOpen = !aiChatOpen;
+  $("#ai-chat").style.display = aiChatOpen ? "flex" : "none";
+  if (aiChatOpen) {
+    $("#ai-input").focus();
+  }
+});
+
+$("#ai-chat-close").addEventListener("click", () => {
+  aiChatOpen = false;
+  $("#ai-chat").style.display = "none";
+});
+
+// 添加消息到聊天
+function addMessage(role, content, actions) {
+  const messages = $("#ai-messages");
+  const msg = document.createElement("div");
+  msg.className = `ai-message ai-message-${role}`;
+
+  const contentDiv = document.createElement("div");
+  contentDiv.className = "ai-message-content";
+  contentDiv.textContent = content;
+  msg.appendChild(contentDiv);
+
+  if (actions && actions.length > 0) {
+    const actionsDiv = document.createElement("div");
+    actionsDiv.className = "ai-message-actions";
+    actions.forEach(action => {
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.textContent = action.label;
+      btn.addEventListener("click", action.handler);
+      actionsDiv.appendChild(btn);
+    });
+    msg.appendChild(actionsDiv);
+  }
+
+  messages.appendChild(msg);
+  messages.scrollTop = messages.scrollHeight;
+  return msg;
+}
+
+// 显示输入中动画
+function showTyping() {
+  const messages = $("#ai-messages");
+  const msg = document.createElement("div");
+  msg.className = "ai-message ai-message-ai";
+  msg.id = "ai-typing";
+
+  const typing = document.createElement("div");
+  typing.className = "ai-typing";
+  typing.innerHTML = '<span class="ai-typing-dot"></span><span class="ai-typing-dot"></span><span class="ai-typing-dot"></span>';
+  msg.appendChild(typing);
+
+  messages.appendChild(msg);
+  messages.scrollTop = messages.scrollHeight;
+}
+
+function hideTyping() {
+  const typing = $("#ai-typing");
+  if (typing) typing.remove();
+}
+
+// 发送消息
+async function sendAiMessage(feature, customInput) {
+  if (aiIsLoading) return;
+  aiIsLoading = true;
+
+  readFormIntoPlan();
+  const context = {
+    courseName: plan.courseName,
+    lessonTitle: plan.lessonTitle,
+    hours: plan.hours,
+  };
+
+  // 确定用户显示文本
+  let userText = customInput;
+  if (!userText) {
+    const labels = {
+      polish: "✎ 润色当前教学内容",
+      expand: "↔ 扩展当前教学内容",
+      outline: "≡ 生成教学大纲",
+      objectives: "◎ 生成教学目标",
+    };
+    userText = labels[feature] || feature;
+  }
+
+  // 添加用户消息
+  addMessage("user", userText);
+
+  // 显示输入中
+  showTyping();
+
+  try {
+    let result;
+    switch (feature) {
+      case "polish":
+        result = await callAI("polish", plan.contentHtml || "");
+        break;
+      case "expand":
+        result = await callAI("expand", plan.contentHtml || "", context);
+        break;
+      case "outline":
+        result = await callAI("generate_outline", "", context);
+        break;
+      case "objectives":
+        result = await callAI("generate_objectives", "", context);
+        break;
+      default:
+        // 自定义问题
+        result = await callAI("polish", customInput, context);
+        break;
+    }
+
+    hideTyping();
+
+    // 根据功能类型决定"使用"按钮行为
+    const isOutline = feature === "outline";
+    const isObjectives = feature === "objectives";
+
+    addMessage("ai", result, [
+      {
+        label: "使用",
+        handler: () => {
+          applyAiResult(result, isOutline ? "outline" : isObjectives ? "objectives" : "content");
+        },
+      },
+    ]);
+  } catch (err) {
+    hideTyping();
+    addMessage("error", "调用失败：" + err.message);
+  } finally {
+    aiIsLoading = false;
+  }
+}
+
+// 应用 AI 结果到表单
+function applyAiResult(result, type) {
+  if (type === "objectives") {
+    $("#objectives").value = result;
+    showToast("已应用到教学目标");
+  } else {
+    // 将纯文本结果转为简单 HTML 列表
+    const lines = result.split("\n").filter(l => l.trim());
+    const html = lines.map(l => {
+      const text = escapeHtml(l.replace(/^[•◦▪\-\d.]\s*/, ""));
+      return `<li>${text}</li>`;
+    }).join("");
+    $("#content-editor").innerHTML = `<ul>${html}</ul>`;
+    showToast("已应用到教学内容");
+  }
+}
+
+// 快捷功能按钮
+document.querySelectorAll(".ai-quick-btn").forEach(btn => {
+  btn.addEventListener("click", () => {
+    const feature = btn.dataset.ai;
+    sendAiMessage(feature);
+  });
+});
+
+// 发送按钮
+$("#ai-send").addEventListener("click", () => {
+  const input = $("#ai-input").value.trim();
+  if (!input) return;
+  $("#ai-input").value = "";
+  sendAiMessage("custom", input);
+});
+
+// 回车发送
+$("#ai-input").addEventListener("keydown", (e) => {
+  if (e.key === "Enter" && !e.shiftKey) {
+    e.preventDefault();
+    const input = e.target.value.trim();
+    if (!input) return;
+    e.target.value = "";
+    sendAiMessage("custom", input);
+  }
+});
+
+// AI 设置弹窗
+function openAiSettings() {
+  const config = getAiConfig();
+  const select = $("#ai-model-select");
+  select.innerHTML = AI_MODELS.map(m =>
+    `<option value="${m.id}" ${m.id === config.model ? "selected" : ""}>${m.name}</option>`
+  ).join("");
+  $("#ai-api-key").value = config.apiKey || "";
+  $("#ai-modal").style.display = "flex";
+}
+
+function closeAiSettings() {
+  $("#ai-modal").style.display = "none";
+}
+
+$("#ai-chat-settings").addEventListener("click", openAiSettings);
+$("#ai-modal-backdrop").addEventListener("click", closeAiSettings);
+$("#ai-cancel-settings").addEventListener("click", closeAiSettings);
+$("#ai-save-settings").addEventListener("click", () => {
+  const model = $("#ai-model-select").value;
+  const apiKey = $("#ai-api-key").value.trim();
+  saveAiConfig({ model, apiKey });
+  closeAiSettings();
+  showToast("AI 设置已保存");
 });
 
 /* ---------------- 工具函数 ---------------- */
