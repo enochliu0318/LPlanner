@@ -18,27 +18,34 @@ const AI_STORAGE_KEY = "lesson_planner_ai_v4";
 // Groq API 端点
 const GROQ_URL = "https://api.groq.com/openai/v1/chat/completions";
 
-// 可用模型列表（免费模型 - 更新于 2025-09）
+// 可用模型列表（免费模型 - 更新于 2025-09-03）
+// 注意：Groq 会定期更新模型，如果某个模型不可用，
+// 请访问 https://console.groq.com/playground 查看最新可用模型
 export const AI_MODELS = [
   {
-    id: "llama3.3-70b-versatile",
+    id: "llama-3.3-70b-versatile",
     name: "Llama 3.3 70B（推荐）",
     description: "Meta 开源，综合能力强",
   },
   {
-    id: "llama3.1-8b-instant",
+    id: "llama-3.1-8b-instant",
     name: "Llama 3.1 8B（快）",
     description: "Meta 开源，速度最快",
   },
   {
-    id: "gemma2-9b-it",
-    name: "Gemma 2 9B",
-    description: "Google 开源",
+    id: "llama3-70b-8192",
+    name: "Llama 3 70B",
+    description: "Meta Llama 3 70B",
   },
   {
-    id: "llama-guard-3-8b",
-    name: "Llama Guard 3 8B",
-    description: "安全过滤模型",
+    id: "llama3-8b-8192",
+    name: "Llama 3 8B",
+    description: "Meta Llama 3 8B",
+  },
+  {
+    id: "mixtral-8x7b-32768",
+    name: "Mixtral 8x7B",
+    description: "Mistral 开源，混合专家模型",
   },
 ];
 
