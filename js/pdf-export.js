@@ -6,7 +6,7 @@
     使用同一套 document-model.js 数据，确保两个输出一致。
     ============================================================ */
 
-import { buildDocumentModel } from "./document-model.js?v=14";
+import { buildDocumentModel } from "./document-model.js?v=15";
 
 const HTML2CANVAS_CDN = "https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js";
 const JSPDF_CDN = "https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js";

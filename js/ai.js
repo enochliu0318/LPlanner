@@ -10,9 +10,17 @@
 
     用户可在设置中填入自己的 Hugging Face API Key 以获得更高速率。
     免费的 API Key 在 https://huggingface.co/settings/tokens 创建。
+
+    如果遇到网络错误，可开启"使用代理"选项。
     ============================================================ */
 
-const AI_STORAGE_KEY = "lesson_planner_ai_v1";
+const AI_STORAGE_KEY = "lesson_planner_ai_v2";
+
+// CORS 代理列表（用于解决浏览器跨域问题）
+const CORS_PROXIES = [
+  "https://corsproxy.io/?",
+  "https://api.allorigins.win/raw?url=",
+];
 
 // 可用模型列表
 export const AI_MODELS = [
@@ -46,10 +54,13 @@ export const AI_FEATURES = {
 export function getAiConfig() {
   try {
     const raw = localStorage.getItem(AI_STORAGE_KEY);
-    if (!raw) return { apiKey: "", model: AI_MODELS[0].id };
-    return JSON.parse(raw);
+    if (!raw) return { apiKey: "", model: AI_MODELS[0].id, useProxy: true };
+    const config = JSON.parse(raw);
+    // 确保 useProxy 有默认值
+    if (config.useProxy === undefined) config.useProxy = true;
+    return config;
   } catch (err) {
-    return { apiKey: "", model: AI_MODELS[0].id };
+    return { apiKey: "", model: AI_MODELS[0].id, useProxy: true };
   }
 }
 
@@ -78,23 +89,39 @@ async function callHuggingFace(prompt, config) {
 
   // 设置超时
   const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 60000); // 60 秒超时
+  const timeoutId = setTimeout(() => controller.abort(), 120000); // 120 秒超时
+
+  const body = JSON.stringify({
+    inputs: prompt,
+    parameters: {
+      max_new_tokens: 1024,
+      temperature: 0.7,
+      top_p: 0.9,
+      do_sample: true,
+    },
+  });
 
   try {
-    const response = await fetch(url, {
-      method: "POST",
-      headers,
-      signal: controller.signal,
-      body: JSON.stringify({
-        inputs: prompt,
-        parameters: {
-          max_new_tokens: 1024,
-          temperature: 0.7,
-          top_p: 0.9,
-          do_sample: true,
-        },
-      }),
-    });
+    let response;
+
+    if (config.useProxy) {
+      // 使用 CORS 代理
+      const proxyUrl = CORS_PROXIES[0] + encodeURIComponent(url);
+      response = await fetch(proxyUrl, {
+        method: "POST",
+        headers,
+        signal: controller.signal,
+        body,
+      });
+    } else {
+      // 直接调用
+      response = await fetch(url, {
+        method: "POST",
+        headers,
+        signal: controller.signal,
+        body,
+      });
+    }
 
     clearTimeout(timeoutId);
 
@@ -115,7 +142,7 @@ async function callHuggingFace(prompt, config) {
       throw new Error("请求超时，请检查网络连接后重试");
     }
     if (err.message.includes("Failed to fetch") || err.message.includes("NetworkError")) {
-      throw new Error("网络连接失败，请检查网络或稍后重试");
+      throw new Error("网络连接失败，请检查网络或开启代理后重试");
     }
     throw err;
   }

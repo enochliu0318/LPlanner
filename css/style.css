@@ -880,6 +880,20 @@ input:focus, textarea:focus, select:focus {
   color: var(--pencil-red);
 }
 
+.checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  font-weight: 500;
+}
+
+.checkbox-label input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+}
+
 /* 移动端适配 */
 @media (max-width: 600px) {
   .ai-fab {

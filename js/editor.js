@@ -468,6 +468,7 @@ function openAiSettings() {
     `<option value="${m.id}" ${m.id === config.model ? "selected" : ""}>${m.name}</option>`
   ).join("");
   $("#ai-api-key").value = config.apiKey || "";
+  $("#ai-use-proxy").checked = config.useProxy !== false;
   $("#ai-modal").style.display = "flex";
 }
 
@@ -481,7 +482,8 @@ $("#ai-cancel-settings").addEventListener("click", closeAiSettings);
 $("#ai-save-settings").addEventListener("click", () => {
   const model = $("#ai-model-select").value;
   const apiKey = $("#ai-api-key").value.trim();
-  saveAiConfig({ model, apiKey });
+  const useProxy = $("#ai-use-proxy").checked;
+  saveAiConfig({ model, apiKey, useProxy });
   closeAiSettings();
   showToast("AI 设置已保存");
 });
@@ -498,6 +500,7 @@ $("#ai-test-btn").addEventListener("click", async () => {
     const config = {
       model: $("#ai-model-select").value,
       apiKey: $("#ai-api-key").value.trim(),
+      useProxy: $("#ai-use-proxy").checked,
     };
     const url = `https://api-inference.huggingface.co/models/${config.model}`;
     const headers = { "Content-Type": "application/json" };
@@ -505,11 +508,23 @@ $("#ai-test-btn").addEventListener("click", async () => {
       headers["Authorization"] = `Bearer ${config.apiKey}`;
     }
 
-    const response = await fetch(url, {
-      method: "POST",
-      headers,
-      body: JSON.stringify({ inputs: "Hello", parameters: { max_new_tokens: 10 } }),
-    });
+    const body = JSON.stringify({ inputs: "Hello", parameters: { max_new_tokens: 10 } });
+    let response;
+
+    if (config.useProxy) {
+      const proxyUrl = "https://corsproxy.io/?" + encodeURIComponent(url);
+      response = await fetch(proxyUrl, {
+        method: "POST",
+        headers,
+        body,
+      });
+    } else {
+      response = await fetch(url, {
+        method: "POST",
+        headers,
+        body,
+      });
+    }
 
     if (response.ok) {
       result.textContent = "连接成功！";
