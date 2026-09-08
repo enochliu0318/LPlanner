@@ -497,42 +497,128 @@ button, input, textarea, select {
 /* 文件夹大图标 */
 .folder-tile {
   border: 1px solid var(--border);
-  background: linear-gradient(180deg, #fffdf8, #f7f1e2);
-  border-radius: var(--radius-m);
-  padding: 18px 12px 12px;
-  text-align: center;
+  background: linear-gradient(180deg, #fffdf8 0%, #f9f3e5 100%);
+  border-radius: 10px;
+  padding: 0;
+  text-align: left;
   cursor: pointer;
   position: relative;
-  transition: border-color .12s ease, transform .12s ease, box-shadow .12s ease;
+  transition: border-color .15s ease, transform .15s ease, box-shadow .15s ease;
+  overflow: hidden;
 }
+
 .folder-tile:hover {
   border-color: var(--ink-green-700);
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(43, 38, 32, 0.08);
+  transform: translateY(-3px);
+  box-shadow: 0 8px 24px rgba(43, 38, 32, 0.12);
 }
-.folder-tile-icon { font-size: 34px; line-height: 1; }
+
+.folder-tile::before {
+  content: "";
+  display: block;
+  height: 6px;
+  background: linear-gradient(90deg, var(--ink-green-700), var(--ink-green-800));
+  border-radius: 10px 10px 0 0;
+  opacity: 0.7;
+  transition: opacity .15s ease;
+}
+
+.folder-tile:hover::before {
+  opacity: 1;
+}
+
+.folder-tile-inner {
+  padding: 16px 16px 14px;
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.folder-tile-icon-wrap {
+  width: 48px;
+  height: 48px;
+  border-radius: 10px;
+  background: linear-gradient(135deg, #e8f0e4 0%, #d4e4cc 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  box-shadow: inset 0 1px 2px rgba(255,255,255,0.6), 0 1px 3px rgba(43, 38, 32, 0.08);
+}
+
+.folder-tile-icon {
+  font-size: 24px;
+  line-height: 1;
+}
+
+.folder-tile-info {
+  flex: 1;
+  min-width: 0;
+}
+
 .folder-tile-name {
-  margin-top: 8px;
   font-weight: 600;
-  font-size: 14px;
+  font-size: 14.5px;
   color: var(--ink-green-900);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  line-height: 1.3;
 }
-.folder-tile-count { margin-top: 2px; font-size: 11.5px; color: var(--ink-faint); }
-.folder-tile-actions { display: flex; justify-content: center; gap: 6px; margin-top: 8px; }
+
+.folder-tile-count {
+  margin-top: 4px;
+  font-size: 12px;
+  color: var(--ink-faint);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.folder-tile-count::before {
+  content: "📄";
+  font-size: 10px;
+  opacity: 0.6;
+}
+
+.folder-tile-count[data-count="0"]::before {
+  content: "📂";
+  opacity: 0.4;
+}
+
+.folder-tile-actions {
+  display: flex;
+  gap: 4px;
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px dashed var(--border);
+  opacity: 0;
+  transition: opacity .15s ease;
+}
+
+.folder-tile:hover .folder-tile-actions {
+  opacity: 1;
+}
+
 .folder-tile-actions button {
   border: 1px solid var(--border);
   background: var(--paper-card);
   color: var(--ink-faint);
   font-size: 11px;
-  padding: 2px 8px;
-  border-radius: 3px;
+  padding: 3px 10px;
+  border-radius: 4px;
   cursor: pointer;
   line-height: 1.4;
+  transition: all .12s ease;
 }
-.folder-tile-actions button:hover { color: var(--pencil-red-dark); border-color: var(--pencil-red); }
+
+.folder-tile-actions button:hover {
+  color: var(--pencil-red-dark);
+  border-color: var(--pencil-red);
+  background: #fff5f3;
+}
+
+
 
 /* 拖拽反馈 */
 .drag-over { outline: 2px dashed var(--ink-green-700); outline-offset: 2px; }

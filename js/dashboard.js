@@ -1,6 +1,6 @@
-import { Storage } from "./storage.js?v=36";
-import { renderRailTabs } from "./tabs.js?v=36";
-import { isSupported as isFsSupported, connect as connectFs, disconnect as disconnectFs, onStatus as onFsStatus, getStatus as getFsStatus, openInExplorer, getFolderName } from "./fs-sync.js?v=36";
+import { Storage } from "./storage.js?v=37";
+import { renderRailTabs } from "./tabs.js?v=37";
+import { isSupported as isFsSupported, connect as connectFs, disconnect as disconnectFs, onStatus as onFsStatus, getStatus as getFsStatus, openInExplorer, getFolderName } from "./fs-sync.js?v=37";
 
 const grid = document.getElementById("card-grid");
 const emptyState = document.getElementById("empty-state");
@@ -193,13 +193,20 @@ function buildFolderTile(f) {
     folders.filter(c => c.parentId === fid).forEach(c => { n += countIn(c.id); });
     return n;
   };
+  const count = countIn(f.id);
   const tile = document.createElement("div");
   tile.className = "folder-tile";
   tile.title = "打开文件夹：" + f.name;
   tile.innerHTML = `
-    <div class="folder-tile-icon">📁</div>
-    <div class="folder-tile-name">${escapeHtml(f.name)}</div>
-    <div class="folder-tile-count">${countIn(f.id)} 份教案</div>
+    <div class="folder-tile-inner">
+      <div class="folder-tile-icon-wrap">
+        <span class="folder-tile-icon">📁</span>
+      </div>
+      <div class="folder-tile-info">
+        <div class="folder-tile-name">${escapeHtml(f.name)}</div>
+        <div class="folder-tile-count" data-count="${count}">${count} 份教案</div>
+      </div>
+    </div>
     <div class="folder-tile-actions">
       <button data-fact="ren" data-id="${f.id}" title="重命名文件夹">✎</button>
       <button data-fact="del" data-id="${f.id}" title="删除文件夹">✕</button>
