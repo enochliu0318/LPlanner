@@ -52,9 +52,9 @@ export async function exportPlanToPdf(plan, buildPrintHtml) {
   await new Promise(r => setTimeout(r, 200));
 
   // 使用 html2canvas 捕获打印视图
-  // scale: 4 提供 4x 超采样，文字边缘更锐利，打印级清晰度
+  // scale: 2 提供 2x 超采样，平衡清晰度与文件大小
   const canvas = await window.html2canvas(root, {
-    scale: 4,
+    scale: 2,
     useCORS: true,
     logging: false,
     backgroundColor: "#ffffff",
@@ -69,8 +69,8 @@ export async function exportPlanToPdf(plan, buildPrintHtml) {
   // 移除 .pdf-capture 类
   document.body.classList.remove("pdf-capture");
 
-  // 使用 jsPDF 创建 PDF
-  const imgData = canvas.toDataURL("image/png");
+  // 使用 jsPDF 创建 PDF（JPEG 压缩，0.85 质量，大幅减小文件体积）
+  const imgData = canvas.toDataURL("image/jpeg", 0.85);
   const { jsPDF } = window.jspdf;
   const pdf = new jsPDF({
     orientation: "portrait",

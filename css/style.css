@@ -800,7 +800,24 @@ input:focus, textarea:focus, select:focus {
 .save-status {
   font-size: 12.5px;
   color: var(--ink-faint);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
 }
+
+.save-status::before {
+  content: "";
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: currentColor;
+  flex-shrink: 0;
+}
+
+.save-status[data-status="saved"] { color: #2a7d4a; }
+.save-status[data-status="unsaved"] { color: #ac3b2a; }
+.save-status[data-status="saving"] { color: #2a5d8c; }
 
 /* ---------- AI 占位区（暂不启用） ---------- */
 

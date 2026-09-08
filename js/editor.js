@@ -1,10 +1,10 @@
-import { Storage } from "./storage.js?v=34";
-import { exportPlanToDocx } from "./docx-export.js?v=34";
-import { exportPlanToPdf } from "./pdf-export.js?v=34";
-import { Tabs, NEW_TAB, renderRailTabs } from "./tabs.js?v=34";
-import { buildDocumentModel } from "./document-model.js?v=34";
-import { sendMessage, AI_MODELS, getAiConfig, saveAiConfig } from "./ai.js?v=34";
-import { onStatus as onFsStatus, openInExplorer, getFolderName } from "./fs-sync.js?v=34";
+import { Storage } from "./storage.js?v=36";
+import { exportPlanToDocx } from "./docx-export.js?v=36";
+import { exportPlanToPdf } from "./pdf-export.js?v=36";
+import { Tabs, NEW_TAB, renderRailTabs } from "./tabs.js?v=36";
+import { buildDocumentModel } from "./document-model.js?v=36";
+import { sendMessage, AI_MODELS, getAiConfig, saveAiConfig } from "./ai.js?v=36";
+import { onStatus as onFsStatus, openInExplorer, getFolderName } from "./fs-sync.js?v=36";
 
 const params = new URLSearchParams(location.search);
 const existingId = params.get("id");
@@ -159,10 +159,42 @@ contentEditor.addEventListener("paste", (e) => {
   document.execCommand("insertText", false, text);
 });
 
-/* ---------------- 未保存更改提醒 ---------------- */
+/* ---------------- 自动保存 + 状态显示 ---------------- */
 
 let dirty = false;
-$("#plan-form").addEventListener("input", () => { dirty = true; });
+let autoSaveTimer = null;
+
+function updateSaveStatus(status) {
+  const el = $("#save-status");
+  el.setAttribute("data-status", status);
+  if (status === "saved") {
+    el.textContent = "已保存 · " + new Date().toLocaleTimeString("zh-CN");
+    el.style.color = "#2a7d4a";
+  } else if (status === "unsaved") {
+    el.textContent = "未保存";
+    el.style.color = "#ac3b2a";
+  } else if (status === "saving") {
+    el.textContent = "保存中...";
+    el.style.color = "#2a5d8c";
+  }
+}
+
+function autoSave() {
+  if (!dirty) return;
+  readFormIntoPlan();
+  if (!plan.lessonTitle.trim()) return;
+  clearTimeout(autoSaveTimer);
+  autoSaveTimer = setTimeout(() => {
+    doSave(false);
+  }, 800);
+}
+
+$("#plan-form").addEventListener("input", () => {
+  dirty = true;
+  updateSaveStatus("unsaved");
+  autoSave();
+});
+
 window.addEventListener("beforeunload", (e) => {
   if (dirty) {
     e.preventDefault();
@@ -172,26 +204,32 @@ window.addEventListener("beforeunload", (e) => {
 
 /* ---------------- 保存 / 删除 ---------------- */
 
-$("#save-btn").addEventListener("click", () => {
+function doSave(showToastFlag) {
   readFormIntoPlan();
   if (!plan.lessonTitle.trim()) {
-    alert("请至少填写“课题”后再保存。");
-    return;
+    alert("请至少填写”课题“后再保存。");
+    return false;
   }
   const wasNew = isNew;
+  updateSaveStatus("saving");
   Storage.save(plan);
   isNew = false;
   dirty = false;
   const url = new URL(location.href);
   url.searchParams.set("id", plan.id);
   history.replaceState(null, "", url);
-  // 标签页同步：新教案保存后把「新建」占位标签换成真实教案
   if (wasNew) Tabs.replace(NEW_TAB, plan.id);
   Tabs.setActive(plan.id);
   renderRailTabs($("#rail-tabs"), { activeId: plan.id });
-  $("#save-status").textContent = "已保存 · " + new Date().toLocaleTimeString("zh-CN");
+  updateSaveStatus("saved");
   updatePageTitle();
-  showToast("教案已保存");
+  if (showToastFlag) showToast("教案已保存");
+  return true;
+}
+
+$("#save-btn").addEventListener("click", () => {
+  clearTimeout(autoSaveTimer);
+  doSave(true);
 });
 
 $("#delete-btn").addEventListener("click", () => {
