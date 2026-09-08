@@ -494,133 +494,33 @@ button, input, textarea, select {
 
 .explorer-main { flex: 1; min-width: 0; }
 
-/* 文件夹大图标 */
-.folder-tile {
-  border: 1px solid var(--border);
-  background: linear-gradient(180deg, #fffdf8 0%, #f9f3e5 100%);
-  border-radius: 10px;
-  padding: 0;
+/* ---------- 文件夹卡片（基于 plan-card，绿色主题） ---------- */
+
+.folder-card {
+  border-left-color: var(--ink-green-700);
+}
+
+.folder-card:hover {
+  border-left-color: var(--ink-green-800);
+}
+
+.folder-card .folder-card-icon {
+  font-size: 32px;
   text-align: center;
-  cursor: pointer;
-  position: relative;
-  transition: border-color .15s ease, transform .15s ease, box-shadow .15s ease;
-  overflow: hidden;
+  margin-bottom: 4px;
 }
 
-.folder-tile:hover {
-  border-color: var(--ink-green-700);
-  transform: translateY(-3px);
-  box-shadow: 0 8px 24px rgba(43, 38, 32, 0.12);
-}
-
-.folder-tile::before {
-  content: "";
-  display: block;
-  height: 6px;
-  background: linear-gradient(90deg, var(--ink-green-700), var(--ink-green-800));
-  border-radius: 10px 10px 0 0;
-  opacity: 0.7;
-  transition: opacity .15s ease;
-}
-
-.folder-tile:hover::before {
-  opacity: 1;
-}
-
-.folder-tile-inner {
-  padding: 18px 12px 12px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 8px;
-}
-
-.folder-tile-icon-wrap {
-  width: 52px;
-  height: 52px;
-  border-radius: 12px;
-  background: linear-gradient(135deg, #e8f0e4 0%, #d4e4cc 100%);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-  box-shadow: inset 0 1px 2px rgba(255,255,255,0.6), 0 2px 4px rgba(43, 38, 32, 0.08);
-}
-
-.folder-tile-icon {
-  font-size: 26px;
-  line-height: 1;
-}
-
-.folder-tile-info {
-  width: 100%;
-}
-
-.folder-tile-name {
-  font-weight: 600;
-  font-size: 14.5px;
+.folder-card h3 {
+  font-size: 16px;
+  text-align: center;
   color: var(--ink-green-900);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  line-height: 1.3;
 }
 
-.folder-tile-count {
-  margin-top: 4px;
+.folder-card .plan-meta {
+  justify-content: center;
   font-size: 12px;
   color: var(--ink-faint);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 4px;
 }
-
-.folder-tile-count::before {
-  content: "📄";
-  font-size: 10px;
-  opacity: 0.6;
-}
-
-.folder-tile-count[data-count="0"]::before {
-  content: "📂";
-  opacity: 0.4;
-}
-
-.folder-tile-actions {
-  display: flex;
-  justify-content: center;
-  gap: 6px;
-  margin-top: 10px;
-  padding-top: 10px;
-  border-top: 1px dashed var(--border);
-  opacity: 0;
-  transition: opacity .15s ease;
-}
-
-.folder-tile:hover .folder-tile-actions {
-  opacity: 1;
-}
-
-.folder-tile-actions button {
-  border: 1px solid var(--border);
-  background: var(--paper-card);
-  color: var(--ink-faint);
-  font-size: 11px;
-  padding: 3px 10px;
-  border-radius: 4px;
-  cursor: pointer;
-  line-height: 1.4;
-  transition: all .12s ease;
-}
-
-.folder-tile-actions button:hover {
-  color: var(--pencil-red-dark);
-  border-color: var(--pencil-red);
-  background: #fff5f3;
-}
-
-
 
 /* 拖拽反馈 */
 .drag-over { outline: 2px dashed var(--ink-green-700); outline-offset: 2px; }

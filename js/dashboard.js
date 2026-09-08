@@ -1,6 +1,6 @@
-import { Storage } from "./storage.js?v=37";
-import { renderRailTabs } from "./tabs.js?v=37";
-import { isSupported as isFsSupported, connect as connectFs, disconnect as disconnectFs, onStatus as onFsStatus, getStatus as getFsStatus, openInExplorer, getFolderName } from "./fs-sync.js?v=37";
+import { Storage } from "./storage.js?v=39";
+import { renderRailTabs } from "./tabs.js?v=39";
+import { isSupported as isFsSupported, connect as connectFs, disconnect as disconnectFs, onStatus as onFsStatus, getStatus as getFsStatus, openInExplorer, getFolderName } from "./fs-sync.js?v=39";
 
 const grid = document.getElementById("card-grid");
 const emptyState = document.getElementById("empty-state");
@@ -33,7 +33,7 @@ function render(keyword = "") {
   const all = Storage.list();
   const kw = keyword.trim().toLowerCase();
   const inFolder = p =>
-    currentFolder === null ? true :
+    currentFolder === null ? !p.folderId :
     currentFolder === "NONE" ? !p.folderId :
     p.folderId === currentFolder;
   const list = all
@@ -53,7 +53,14 @@ function render(keyword = "") {
   renderBreadcrumb();
   grid.innerHTML = "";
 
-  if (all.length === 0) {
+  // 根目录：始终显示顶层文件夹（即使没有教案）
+  if (currentFolder === null) {
+    Storage.listFolders().filter(f => !f.parentId).forEach(f => grid.appendChild(buildFolderTile(f)));
+  } else if (currentFolder !== "NONE") {
+    Storage.listFolders().filter(f => f.parentId === currentFolder).forEach(f => grid.appendChild(buildFolderTile(f)));
+  }
+
+  if (all.length === 0 && list.length === 0 && Storage.listFolders().length === 0) {
     emptyState.style.display = "block";
     grid.style.display = "none";
     return;
@@ -65,15 +72,8 @@ function render(keyword = "") {
     const msg = kw
       ? `没有找到匹配"${escapeHtml(keyword)}"的教案。`
       : "此处暂无教案，可把教案卡片拖到左侧文件夹，或在卡片上点「移动」。";
-    grid.innerHTML = `<p style="color:var(--ink-faint)">${msg}</p>`;
+    grid.innerHTML += `<p style="color:var(--ink-faint)">${msg}</p>`;
     return;
-  }
-
-  // 「全部教案」视图：顶层文件夹大图标；进入某文件夹后：显示其子文件夹
-  if (currentFolder === null) {
-    Storage.listFolders().filter(f => !f.parentId).forEach(f => grid.appendChild(buildFolderTile(f)));
-  } else if (currentFolder !== "NONE") {
-    Storage.listFolders().filter(f => f.parentId === currentFolder).forEach(f => grid.appendChild(buildFolderTile(f)));
   }
 
   list.forEach(plan => {
@@ -136,7 +136,7 @@ function renderSidebar() {
   const unclassified = plans.filter(p => !p.folderId).length;
 
   let html =
-    `<button class="xsidebar-item ${currentFolder === null ? "active" : ""}" data-target="root" title="全部教案">🏠 全部教案 <span class="xcount">${plans.length}</span></button>` +
+    `<button class="xsidebar-item ${currentFolder === null ? "active" : ""}" data-target="root" title="全部内容">🏠 全部内容 <span class="xcount">${plans.length}</span></button>` +
     `<button class="xsidebar-item ${currentFolder === "NONE" ? "active" : ""}" data-target="NONE" title="未分类">📄 未分类 <span class="xcount">${unclassified}</span></button>` +
     `<div class="xsidebar-label">文件夹</div>`;
 
@@ -163,7 +163,7 @@ function renderSidebar() {
 }
 
 function renderBreadcrumb() {
-  let html = `<button class="crumb ${currentFolder === null ? "active" : ""}" data-target="root">🏠 全部教案</button>`;
+  let html = `<button class="crumb ${currentFolder === null ? "active" : ""}" data-target="root">🏠 全部内容</button>`;
   if (currentFolder === "NONE") {
     html += `<span class="crumb-sep">›</span><span class="crumb active">📄 未分类</span>`;
   } else if (typeof currentFolder === "string") {
@@ -195,21 +195,17 @@ function buildFolderTile(f) {
   };
   const count = countIn(f.id);
   const tile = document.createElement("div");
-  tile.className = "folder-tile";
+  tile.className = "plan-card folder-card";
   tile.title = "打开文件夹：" + f.name;
   tile.innerHTML = `
-    <div class="folder-tile-inner">
-      <div class="folder-tile-icon-wrap">
-        <span class="folder-tile-icon">📁</span>
-      </div>
-      <div class="folder-tile-info">
-        <div class="folder-tile-name">${escapeHtml(f.name)}</div>
-        <div class="folder-tile-count" data-count="${count}">${count} 份教案</div>
-      </div>
+    <div class="folder-card-icon">📁</div>
+    <h3>${escapeHtml(f.name)}</h3>
+    <div class="plan-meta">
+      <span>${count} 份教案</span>
     </div>
-    <div class="folder-tile-actions">
-      <button data-fact="ren" data-id="${f.id}" title="重命名文件夹">✎</button>
-      <button data-fact="del" data-id="${f.id}" title="删除文件夹">✕</button>
+    <div class="plan-actions">
+      <button class="btn btn-sm btn-ghost" data-fact="ren" data-id="${f.id}" title="重命名文件夹">✎ 重命名</button>
+      <button class="btn btn-sm btn-ghost btn-danger" data-fact="del" data-id="${f.id}" title="删除文件夹">✕ 删除</button>
     </div>`;
   tile.addEventListener("click", (e) => {
     if (e.target.closest("button[data-fact]")) return;
