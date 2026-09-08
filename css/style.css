@@ -500,7 +500,7 @@ button, input, textarea, select {
   background: linear-gradient(180deg, #fffdf8 0%, #f9f3e5 100%);
   border-radius: 10px;
   padding: 0;
-  text-align: left;
+  text-align: center;
   cursor: pointer;
   position: relative;
   transition: border-color .15s ease, transform .15s ease, box-shadow .15s ease;
@@ -528,32 +528,32 @@ button, input, textarea, select {
 }
 
 .folder-tile-inner {
-  padding: 16px 16px 14px;
+  padding: 18px 12px 12px;
   display: flex;
-  align-items: flex-start;
-  gap: 12px;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
 }
 
 .folder-tile-icon-wrap {
-  width: 48px;
-  height: 48px;
-  border-radius: 10px;
+  width: 52px;
+  height: 52px;
+  border-radius: 12px;
   background: linear-gradient(135deg, #e8f0e4 0%, #d4e4cc 100%);
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  box-shadow: inset 0 1px 2px rgba(255,255,255,0.6), 0 1px 3px rgba(43, 38, 32, 0.08);
+  box-shadow: inset 0 1px 2px rgba(255,255,255,0.6), 0 2px 4px rgba(43, 38, 32, 0.08);
 }
 
 .folder-tile-icon {
-  font-size: 24px;
+  font-size: 26px;
   line-height: 1;
 }
 
 .folder-tile-info {
-  flex: 1;
-  min-width: 0;
+  width: 100%;
 }
 
 .folder-tile-name {
@@ -572,6 +572,7 @@ button, input, textarea, select {
   color: var(--ink-faint);
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: 4px;
 }
 
@@ -588,7 +589,8 @@ button, input, textarea, select {
 
 .folder-tile-actions {
   display: flex;
-  gap: 4px;
+  justify-content: center;
+  gap: 6px;
   margin-top: 10px;
   padding-top: 10px;
   border-top: 1px dashed var(--border);
