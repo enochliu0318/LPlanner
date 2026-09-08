@@ -72,7 +72,13 @@ function render(keyword = "") {
     const msg = kw
       ? `没有找到匹配"${escapeHtml(keyword)}"的教案。`
       : "此处暂无教案，可把教案卡片拖到左侧文件夹，或在卡片上点「移动」。";
-    grid.innerHTML += `<p style="color:var(--ink-faint)">${msg}</p>`;
+    const emptyMsg = document.createElement("p");
+    emptyMsg.style.color = "var(--ink-faint)";
+    emptyMsg.style.gridColumn = "1 / -1";
+    emptyMsg.style.textAlign = "center";
+    emptyMsg.style.padding = "40px 0";
+    emptyMsg.textContent = msg;
+    grid.appendChild(emptyMsg);
     return;
   }
 
@@ -234,8 +240,8 @@ function makeDropTarget(el, folderId, msgFn) {
     // folderId 为空 = 移到「未分类」
     Storage.movePlan(planId, folderId || null);
     showToast(msgFn ? msgFn() : "已移动");
-    // 延迟渲染，避免拖拽事件干扰后续点击
-    requestAnimationFrame(() => render(searchInput.value));
+    // 延迟渲染，确保拖拽事件链完全结束
+    setTimeout(() => render(searchInput.value), 100);
   });
 }
 
