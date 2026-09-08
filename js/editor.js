@@ -1,9 +1,10 @@
-import { Storage } from "./storage.js?v=27";
-import { exportPlanToDocx } from "./docx-export.js?v=27";
-import { exportPlanToPdf } from "./pdf-export.js?v=27";
-import { Tabs, NEW_TAB, renderRailTabs } from "./tabs.js?v=27";
-import { buildDocumentModel } from "./document-model.js?v=27";
-import { sendMessage, AI_MODELS, getAiConfig, saveAiConfig } from "./ai.js?v=27";
+import { Storage } from "./storage.js?v=34";
+import { exportPlanToDocx } from "./docx-export.js?v=34";
+import { exportPlanToPdf } from "./pdf-export.js?v=34";
+import { Tabs, NEW_TAB, renderRailTabs } from "./tabs.js?v=34";
+import { buildDocumentModel } from "./document-model.js?v=34";
+import { sendMessage, AI_MODELS, getAiConfig, saveAiConfig } from "./ai.js?v=34";
+import { onStatus as onFsStatus, openInExplorer, getFolderName } from "./fs-sync.js?v=34";
 
 const params = new URLSearchParams(location.search);
 const existingId = params.get("id");
@@ -509,6 +510,25 @@ function escapeAttr(s) { return escapeHtml(s); }
 function nl2br(s) { return escapeHtml(s).replace(/\n/g, "<br/>"); }
 
 /* ---------------- 初始化 ---------------- */
+
+/* ---------------- 打开文件夹按钮 ---------------- */
+
+const editorOpenFolderBtn = document.getElementById("open-folder-btn");
+if (editorOpenFolderBtn) {
+  editorOpenFolderBtn.addEventListener("click", async () => {
+    try {
+      await openInExplorer();
+    } catch (err) {
+      if (err.name !== "AbortError") {
+        showToast("打开失败: " + err.message);
+      }
+    }
+  });
+  // 只在已连接时显示
+  onFsStatus((status) => {
+    editorOpenFolderBtn.style.display = status === "connected" ? "inline-flex" : "none";
+  });
+}
 
 fillFormFromPlan();
 renderRailTabs($("#rail-tabs"), { activeId: tabId });

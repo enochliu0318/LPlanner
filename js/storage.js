@@ -68,6 +68,7 @@ function blankPlan() {
     id: genId(),
     createdAt: now,
     updatedAt: now,
+    folderId: null,
     courseName: "",
     courseCategory: "",
     teacher: "",
@@ -91,7 +92,19 @@ function blankPlan() {
   };
 }
 
+/* 变更通知：fs-sync 等模块订阅，数据变化时自动镜像到本地文件夹 */
+const changeListeners = [];
+function notifyChange() {
+  changeListeners.forEach(cb => { try { cb(); } catch (err) { console.warn("[storage] listener error:", err); } });
+}
+
 export const Storage = {
+  /** 订阅数据变更（返回取消订阅函数） */
+  onChange(cb) {
+    changeListeners.push(cb);
+    return () => { const i = changeListeners.indexOf(cb); if (i > -1) changeListeners.splice(i, 1); };
+  },
+
   list() {
     return readAll().sort((a, b) => (b.updatedAt || "").localeCompare(a.updatedAt || ""));
   },
@@ -113,12 +126,76 @@ export const Storage = {
       list[idx] = plan;
     }
     writeAll(list);
+    notifyChange();
     return plan;
   },
 
   remove(id) {
     const list = readAll().filter(p => p.id !== id);
     writeAll(list);
+    notifyChange();
+  },
+
+  /* ---------- 文件夹管理 ---------- */
+
+  /** 列出全部文件夹（按创建时间排序） */
+  listFolders() {
+    return readFolders().sort((a, b) => (a.createdAt || "").localeCompare(b.createdAt || ""));
+  },
+
+  /** 新建文件夹（parentId 为空表示顶层），返回创建的对象；名称为空返回 null */
+  createFolder(name, parentId = null) {
+    name = String(name || "").trim();
+    if (!name) return null;
+    const folder = { id: genId(), name, parentId: parentId || null, createdAt: new Date().toISOString() };
+    const list = readFolders();
+    list.push(folder);
+    writeFolders(list);
+    notifyChange();
+    return folder;
+  },
+
+  /** 重命名文件夹 */
+  renameFolder(id, name) {
+    name = String(name || "").trim();
+    if (!name) return null;
+    const list = readFolders();
+    const folder = list.find(f => f.id === id);
+    if (!folder) return null;
+    folder.name = name;
+    writeFolders(list);
+    notifyChange();
+    return folder;
+  },
+
+  /** 删除文件夹：其中的教案移回「未分类」不会丢失；子文件夹上移到被删文件夹的父级 */
+  removeFolder(id) {
+    const folders = readFolders();
+    const folder = folders.find(f => f.id === id);
+    if (!folder) return;
+    folders.forEach(f => {
+      if (f.parentId === id) f.parentId = folder.parentId || null;
+    });
+    writeFolders(folders.filter(f => f.id !== id));
+    const list = readAll();
+    let changed = false;
+    list.forEach(p => {
+      if (p.folderId === id) { p.folderId = null; changed = true; }
+    });
+    if (changed) writeAll(list);
+    notifyChange();
+  },
+
+  /** 把教案移动到文件夹（folderId 为空表示移到「未分类」） */
+  movePlan(planId, folderId) {
+    const list = readAll();
+    const plan = list.find(p => p.id === planId);
+    if (!plan) return false;
+    plan.folderId = folderId || null;
+    plan.updatedAt = new Date().toISOString();
+    writeAll(list);
+    notifyChange();
+    return true;
   },
 
   duplicate(id) {
@@ -133,6 +210,7 @@ export const Storage = {
     const list = readAll();
     list.push(copy);
     writeAll(list);
+    notifyChange();
     return copy;
   },
 
@@ -151,6 +229,7 @@ export const Storage = {
 
     if (mode === "replace") {
       writeAll(incoming);
+      notifyChange();
       return incoming.length;
     }
 
@@ -166,6 +245,7 @@ export const Storage = {
       added++;
     });
     writeAll(list);
+    notifyChange();
     return added;
   }
 };
