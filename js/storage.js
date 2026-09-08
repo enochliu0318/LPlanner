@@ -186,6 +186,27 @@ export const Storage = {
     notifyChange();
   },
 
+  /** 把文件夹移动到另一个文件夹（targetId 为空表示移到顶层）；防止循环嵌套 */
+  moveFolder(folderId, targetId) {
+    if (folderId === targetId) return false;
+    const folders = readFolders();
+    const folder = folders.find(f => f.id === folderId);
+    if (!folder) return false;
+    // 防止把文件夹拖进自己的子文件夹里（会造成循环）
+    if (targetId) {
+      let cur = targetId;
+      while (cur) {
+        if (cur === folderId) return false;
+        const parent = folders.find(f => f.id === cur);
+        cur = parent ? parent.parentId : null;
+      }
+    }
+    folder.parentId = targetId || null;
+    writeFolders(folders);
+    notifyChange();
+    return true;
+  },
+
   /** 把教案移动到文件夹（folderId 为空表示移到「未分类」） */
   movePlan(planId, folderId) {
     const list = readAll();

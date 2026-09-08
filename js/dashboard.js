@@ -166,6 +166,18 @@ function renderSidebar() {
 
   html += `<button class="xsidebar-item xsidebar-add" data-fact="new" title="新建文件夹">＋ 新建文件夹</button>`;
   sidebar.innerHTML = html;
+  // 为侧栏文件夹条目设置拖放目标
+  sidebar.querySelectorAll(".xsidebar-row[data-target]").forEach(row => {
+    const fid = row.getAttribute("data-target");
+    makeDropTarget(row, fid, () => "已移动到该文件夹");
+  });
+  // 「全部内容」和「未分类」也作为拖放目标
+  sidebar.querySelectorAll('.xsidebar-item[data-target="root"]').forEach(el => {
+    makeDropTarget(el, null, () => "已移出文件夹");
+  });
+  sidebar.querySelectorAll('.xsidebar-item[data-target="NONE"]').forEach(el => {
+    makeDropTarget(el, null, () => "已移出文件夹");
+  });
 }
 
 function renderBreadcrumb() {
@@ -202,7 +214,8 @@ function buildFolderTile(f) {
   const count = countIn(f.id);
   const tile = document.createElement("div");
   tile.className = "plan-card folder-card";
-  tile.title = "打开文件夹：" + f.name;
+  tile.title = "打开文件夹：" + f.name + "（可拖拽到其他文件夹）";
+  tile.draggable = true;
   tile.innerHTML = `
     <div class="folder-card-icon">📁</div>
     <h3>${escapeHtml(f.name)}</h3>
@@ -217,14 +230,24 @@ function buildFolderTile(f) {
     if (e.target.closest("button[data-fact]")) return;
     navigate(f.id);
   });
+  // 文件夹拖拽：把文件夹拖到其他文件夹里
+  tile.addEventListener("dragstart", (e) => {
+    e.dataTransfer.setData("text/folder-id", f.id);
+    e.dataTransfer.effectAllowed = "move";
+    tile.classList.add("dragging");
+    e.stopPropagation();
+  });
+  tile.addEventListener("dragend", () => tile.classList.remove("dragging"));
   makeDropTarget(tile, f.id, () => "已移动到 " + f.name);
   return tile;
 }
 
-/** 共享 drop 目标：文件夹大图标、左侧栏各条目 */
+/** 共享 drop 目标：文件夹大图标、左侧栏各条目（支持教案和文件夹拖入） */
 function makeDropTarget(el, folderId, msgFn) {
   el.addEventListener("dragover", (e) => {
-    if (!e.dataTransfer.types.includes("text/plan-id")) return;
+    const isPlan = e.dataTransfer.types.includes("text/plan-id");
+    const isFolder = e.dataTransfer.types.includes("text/folder-id");
+    if (!isPlan && !isFolder) return;
     e.preventDefault();
     e.dataTransfer.dropEffect = "move";
     el.classList.add("drag-over");
@@ -236,10 +259,19 @@ function makeDropTarget(el, folderId, msgFn) {
     e.preventDefault();
     el.classList.remove("drag-over");
     const planId = e.dataTransfer.getData("text/plan-id");
-    if (!planId) return;
-    // folderId 为空 = 移到「未分类」
-    Storage.movePlan(planId, folderId || null);
-    showToast(msgFn ? msgFn() : "已移动");
+    const draggedFolderId = e.dataTransfer.getData("text/folder-id");
+    // 教案拖入
+    if (planId) {
+      Storage.movePlan(planId, folderId || null);
+      showToast(msgFn ? msgFn() : "已移动");
+    }
+    // 文件夹拖入（不能拖到自己里面）
+    else if (draggedFolderId && draggedFolderId !== folderId) {
+      Storage.moveFolder(draggedFolderId, folderId || null);
+      showToast("文件夹已移动");
+    } else {
+      return;
+    }
     // 延迟渲染，确保拖拽事件链完全结束
     setTimeout(() => render(searchInput.value), 100);
   });
