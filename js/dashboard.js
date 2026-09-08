@@ -234,7 +234,8 @@ function makeDropTarget(el, folderId, msgFn) {
     // folderId 为空 = 移到「未分类」
     Storage.movePlan(planId, folderId || null);
     showToast(msgFn ? msgFn() : "已移动");
-    render(searchInput.value);
+    // 延迟渲染，避免拖拽事件干扰后续点击
+    requestAnimationFrame(() => render(searchInput.value));
   });
 }
 
