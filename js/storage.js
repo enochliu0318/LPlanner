@@ -6,6 +6,7 @@
    ============================================================ */
 
 const LP_STORE_KEY = "lesson_planner_v1";
+const LP_FOLDER_KEY = "lesson_planner_folders_v1";
 
 /** 生成一个简单的唯一 ID */
 function genId() {
@@ -32,6 +33,30 @@ function writeAll(list) {
     return true;
   } catch (err) {
     console.error("保存本地教案数据失败：", err);
+    return false;
+  }
+}
+
+/** 读取全部文件夹（数组），若不存在则返回空数组 */
+function readFolders() {
+  try {
+    const raw = localStorage.getItem(LP_FOLDER_KEY);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch (err) {
+    console.error("读取文件夹数据失败：", err);
+    return [];
+  }
+}
+
+/** 写入全部文件夹 */
+function writeFolders(list) {
+  try {
+    localStorage.setItem(LP_FOLDER_KEY, JSON.stringify(list));
+    return true;
+  } catch (err) {
+    console.error("保存文件夹数据失败：", err);
     return false;
   }
 }

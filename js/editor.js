@@ -1,9 +1,9 @@
-import { Storage } from "./storage.js?v=26";
-import { exportPlanToDocx } from "./docx-export.js?v=26";
-import { exportPlanToPdf } from "./pdf-export.js?v=26";
-import { Tabs, NEW_TAB, renderRailTabs } from "./tabs.js?v=26";
-import { buildDocumentModel } from "./document-model.js?v=26";
-import { sendMessage, AI_MODELS, getAiConfig, saveAiConfig } from "./ai.js?v=26";
+import { Storage } from "./storage.js?v=27";
+import { exportPlanToDocx } from "./docx-export.js?v=27";
+import { exportPlanToPdf } from "./pdf-export.js?v=27";
+import { Tabs, NEW_TAB, renderRailTabs } from "./tabs.js?v=27";
+import { buildDocumentModel } from "./document-model.js?v=27";
+import { sendMessage, AI_MODELS, getAiConfig, saveAiConfig } from "./ai.js?v=27";
 
 const params = new URLSearchParams(location.search);
 const existingId = params.get("id");
@@ -272,6 +272,23 @@ $("#export-docx-btn").addEventListener("click", async () => {
     console.error(err);
     alert("导出 Word 失败，请检查网络是否可以访问 docx 组件（首次导出需要联网加载一次）。");
   }
+});
+
+/* ---------------- 导出备份（当前教案 JSON） ---------------- */
+
+$("#export-backup-btn").addEventListener("click", () => {
+  readFormIntoPlan();
+  const payload = JSON.stringify({ exportedAt: new Date().toISOString(), plans: [plan] }, null, 2);
+  const blob = new Blob([payload], { type: "application/json" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  const stamp = new Date().toISOString().slice(0, 10);
+  const safeTitle = (plan.lessonTitle || "未命名教案").replace(/[\\/:*?"<>|]/g, "_");
+  a.href = url;
+  a.download = `lesson-plan-${safeTitle}-${stamp}.json`;
+  a.click();
+  URL.revokeObjectURL(url);
+  showToast("备份文件已下载");
 });
 
 /* ---------------- AI Chat ---------------- */

@@ -1,5 +1,5 @@
-import { Storage } from "./storage.js?v=26";
-import { renderRailTabs } from "./tabs.js?v=26";
+import { Storage } from "./storage.js?v=27";
+import { renderRailTabs } from "./tabs.js?v=27";
 
 const grid = document.getElementById("card-grid");
 const emptyState = document.getElementById("empty-state");
@@ -68,12 +68,11 @@ function render(keyword = "") {
         <button class="btn btn-sm btn-ghost btn-danger" data-act="del" data-id="${plan.id}">删除</button>
       </div>
     `;
-    // 点击卡片任意位置 → 直接进入该教案的编辑页
-    card.addEventListener("click", () => {
+    // 点击卡片任意位置 → 直接进入该教案的编辑页（按钮区域除外）
+    card.addEventListener("click", (e) => {
+      if (e.target.closest(".plan-actions")) return;
       location.href = "editor.html?id=" + encodeURIComponent(plan.id);
     });
-    // 按钮区域不触发卡片跳转，保证 复制 / 删除 / 编辑 按钮各自正常工作
-    card.querySelector(".plan-actions").addEventListener("click", (e) => e.stopPropagation());
     grid.appendChild(card);
   });
 }
