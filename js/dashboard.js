@@ -94,7 +94,7 @@ function render(keyword = "") {
         <span>上课时间：${escapeHtml(plan.teachDate || "—")}</span>
         <span>学时：${escapeHtml(String(plan.hours || "1"))}</span>
       </div>
-      <div class="plan-meta" style="color:var(--ink-faint)">更新于 ${fmtDate(plan.updatedAt)}</div>
+      <div class="plan-meta plan-updated">更新于 ${fmtDate(plan.updatedAt)}</div>
       <div class="plan-actions">
         <a class="btn btn-sm btn-primary" href="editor.html?id=${encodeURIComponent(plan.id)}">编辑</a>
         <button class="btn btn-sm" data-act="dup" data-id="${plan.id}">复制</button>
