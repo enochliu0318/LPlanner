@@ -157,32 +157,32 @@ async function mirrorAll() {
     await writeJson(await dir.getFileHandle(planFileName(p), { create: true }), p);
   }
 
-  // 3. 清理不再存在的教案文件（只删匹配我们命名模式的 .json，绝不碰用户自己的文件）
-  const dirsToCheck = [[[], rootHandle]];
-  for (const f of folders) {
-    try { dirsToCheck.push([folderPathOf(f.id, folders), await getDirByPath(folderPathOf(f.id, folders), false)]); } catch (err) {}
-  }
-  for (const [path, dir] of dirsToCheck) {
+  // 3. 递归清理所有废弃文件（遍历整个目录树）
+  async function cleanDir(dir) {
+    const subdirs = [];
     for (const { name, handle } of await listDir(dir)) {
-      if (handle.kind !== "file") continue;
-      const m = name.match(ID_RE);
-      if (m && !validId6.has(m[1])) {
+      if (handle.kind === "file") {
+        const m = name.match(ID_RE);
+        if (m && !validId6.has(m[1])) {
+          try { await dir.removeEntry(name); } catch (err) {}
+        }
+      } else if (handle.kind === "directory") {
+        subdirs.push({ name, handle });
+      }
+    }
+    // 递归清理子目录，如果子目录变空则删除
+    for (const { name, handle } of subdirs) {
+      await cleanDir(handle);
+      // 检查目录是否为空
+      let isEmpty = true;
+      for await (const _ of handle.entries()) { isEmpty = false; break; }
+      if (isEmpty) {
         try { await dir.removeEntry(name); } catch (err) {}
       }
     }
   }
-
-  // 4. 清理我们之前创建、现在已空的文件夹目录
-  const currentPaths = [...validPaths];
-  for (const old of ourDirs) {
-    if (currentPaths.some(p => p === old || p.startsWith(old + "/"))) continue;
-    try {
-      const parts = old.split("/");
-      const parent = await getDirByPath(parts.slice(0, -1), false);
-      await parent.removeEntry(parts[parts.length - 1]);
-    } catch (err) { /* 目录非空或已不存在，忽略 */ }
-  }
-  ourDirs = new Set(currentPaths);
+  await cleanDir(rootHandle);
+  ourDirs = new Set(validPaths);
 }
 
 /* ---------- 从磁盘导入 ---------- */
