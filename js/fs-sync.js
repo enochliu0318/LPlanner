@@ -130,7 +130,7 @@ let mirrorTimer = null;
 function scheduleMirror() {
   if (!rootHandle) return;
   clearTimeout(mirrorTimer);
-  mirrorTimer = setTimeout(() => enqueue(mirrorAll), 600);
+  mirrorTimer = setTimeout(() => enqueue(mirrorAll), 100);
 }
 
 /* ---------- 全量镜像 ---------- */
