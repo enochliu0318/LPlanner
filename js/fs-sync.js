@@ -6,7 +6,7 @@
    - 用户选择一个本地文件夹后，每次数据变更自动镜像为真实文件：
        <所选文件夹>/
          folders.json              ← 文件夹树元数据
-         课题名 [编号].json         ← 未分类教案
+         课题名 [编号].json         ← 首页（未入文件夹）的教案
          Unit 3/
            课题名 [编号].json       ← 文件夹内教案
    - 重连时自动扫描磁盘上的 JSON 导入回来（按 updatedAt 取较新者），
@@ -15,7 +15,7 @@
    - 仅支持 Chrome / Edge；其他浏览器自动隐藏该功能
    ============================================================ */
 
-import { Storage } from "./storage.js?v=39";
+import { Storage } from "./storage.js?v=52";
 
 const DB_NAME = "lesson_planner_fs";
 const STORE = "handles";

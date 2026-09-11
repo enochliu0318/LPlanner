@@ -1,10 +1,10 @@
-import { Storage } from "./storage.js?v=39";
-import { exportPlanToDocx } from "./docx-export.js?v=39";
-import { exportPlanToPdf } from "./pdf-export.js?v=39";
-import { Tabs, NEW_TAB, renderRailTabs } from "./tabs.js?v=39";
-import { buildDocumentModel } from "./document-model.js?v=39";
-import { sendMessage, AI_MODELS, getAiConfig, saveAiConfig } from "./ai.js?v=39";
-import { onStatus as onFsStatus, openInExplorer, getFolderName } from "./fs-sync.js?v=39";
+import { Storage } from "./storage.js?v=52";
+import { exportPlanToDocx } from "./docx-export.js?v=52";
+import { exportPlanToPdf } from "./pdf-export.js?v=52";
+import { Tabs, NEW_TAB, renderRailTabs } from "./tabs.js?v=52";
+import { buildDocumentModel } from "./document-model.js?v=52";
+import { sendMessage, AI_MODELS, getAiConfig, saveAiConfig } from "./ai.js?v=52";
+import { onStatus as onFsStatus, openInExplorer, getFolderName } from "./fs-sync.js?v=52";
 
 const params = new URLSearchParams(location.search);
 const existingId = params.get("id");

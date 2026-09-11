@@ -1,6 +1,6 @@
-import { Storage } from "./storage.js?v=39";
-import { renderRailTabs } from "./tabs.js?v=39";
-import { isSupported as isFsSupported, connect as connectFs, disconnect as disconnectFs, onStatus as onFsStatus, getStatus as getFsStatus, openInExplorer, getFolderName } from "./fs-sync.js?v=39";
+import { Storage } from "./storage.js?v=52";
+import { renderRailTabs } from "./tabs.js?v=52";
+import { isSupported as isFsSupported, connect as connectFs, disconnect as disconnectFs, onStatus as onFsStatus, getStatus as getFsStatus, openInExplorer, getFolderName } from "./fs-sync.js?v=52";
 
 const grid = document.getElementById("card-grid");
 const emptyState = document.getElementById("empty-state");
@@ -11,9 +11,11 @@ const sidebar = document.getElementById("explorer-sidebar");
 const breadcrumb = document.getElementById("breadcrumb");
 const moveModal = document.getElementById("move-modal");
 
-// 当前选中的文件夹：null = 全部；"NONE" = 未分类；其他值 = 文件夹 id
+// 当前选中的文件夹：null = 全部内容（首页）；其他值 = 文件夹 id
 let currentFolder = null;
 let movePlanId = null;
+// 正在被拖拽的文件夹 id（用于禁止拖到自己/后代上时高亮）
+let draggingFolderId = null;
 
 function showToast(msg) {
   toast.textContent = msg;
@@ -34,7 +36,6 @@ function render(keyword = "") {
   const kw = keyword.trim().toLowerCase();
   const inFolder = p =>
     currentFolder === null ? !p.folderId :
-    currentFolder === "NONE" ? !p.folderId :
     p.folderId === currentFolder;
   const list = all
     .filter(inFolder)
@@ -56,7 +57,7 @@ function render(keyword = "") {
   // 根目录：始终显示顶层文件夹（即使没有教案）
   if (currentFolder === null) {
     Storage.listFolders().filter(f => !f.parentId).forEach(f => grid.appendChild(buildFolderTile(f)));
-  } else if (currentFolder !== "NONE") {
+  } else if (typeof currentFolder === "string") {
     Storage.listFolders().filter(f => f.parentId === currentFolder).forEach(f => grid.appendChild(buildFolderTile(f)));
   }
 
@@ -125,7 +126,7 @@ function escapeHtml(s) {
 /* ---------------- 资源管理器：侧栏 / 面包屑 / 文件夹图标 ---------------- */
 
 function navigate(target) {
-  // target: "root" | "NONE" | 文件夹 id
+  // target: "root" | 文件夹 id
   currentFolder = target === "root" ? null : target;
   render(searchInput.value);
 }
@@ -139,11 +140,9 @@ function renderSidebar() {
     folders.filter(f => f.parentId === fid).forEach(c => { n += countIn(c.id); });
     return n;
   };
-  const unclassified = plans.filter(p => !p.folderId).length;
 
   let html =
     `<button class="xsidebar-item ${currentFolder === null ? "active" : ""}" data-target="root" title="全部内容">🏠 全部内容 <span class="xcount">${plans.length}</span></button>` +
-    `<button class="xsidebar-item ${currentFolder === "NONE" ? "active" : ""}" data-target="NONE" title="未分类">📄 未分类 <span class="xcount">${unclassified}</span></button>` +
     `<div class="xsidebar-label">文件夹</div>`;
 
   // 递归渲染树形结构（缩进体现层级）
@@ -166,25 +165,12 @@ function renderSidebar() {
 
   html += `<button class="xsidebar-item xsidebar-add" data-fact="new" title="新建文件夹">＋ 新建文件夹</button>`;
   sidebar.innerHTML = html;
-  // 为侧栏文件夹条目设置拖放目标
-  sidebar.querySelectorAll(".xsidebar-row[data-target]").forEach(row => {
-    const fid = row.getAttribute("data-target");
-    makeDropTarget(row, fid, () => "已移动到该文件夹");
-  });
-  // 「全部内容」和「未分类」也作为拖放目标
-  sidebar.querySelectorAll('.xsidebar-item[data-target="root"]').forEach(el => {
-    makeDropTarget(el, null, () => "已移出文件夹");
-  });
-  sidebar.querySelectorAll('.xsidebar-item[data-target="NONE"]').forEach(el => {
-    makeDropTarget(el, null, () => "已移出文件夹");
-  });
+  // 侧栏的拖放统一由 sidebar 上的事件委托处理（见文件底部），避免重复绑定
 }
 
 function renderBreadcrumb() {
   let html = `<button class="crumb ${currentFolder === null ? "active" : ""}" data-target="root">🏠 全部内容</button>`;
-  if (currentFolder === "NONE") {
-    html += `<span class="crumb-sep">›</span><span class="crumb active">📄 未分类</span>`;
-  } else if (typeof currentFolder === "string") {
+  if (typeof currentFolder === "string") {
     // 从当前文件夹沿 parentId 向上回溯出完整路径
     const folders = Storage.listFolders();
     const chain = [];
@@ -235,9 +221,13 @@ function buildFolderTile(f) {
     e.dataTransfer.setData("text/folder-id", f.id);
     e.dataTransfer.effectAllowed = "move";
     tile.classList.add("dragging");
+    draggingFolderId = f.id;
     e.stopPropagation();
   });
-  tile.addEventListener("dragend", () => tile.classList.remove("dragging"));
+  tile.addEventListener("dragend", () => {
+    tile.classList.remove("dragging");
+    draggingFolderId = null;
+  });
   makeDropTarget(tile, f.id, () => "已移动到 " + f.name);
   return tile;
 }
@@ -286,7 +276,7 @@ function openFolderModal(mode, folderId) {
   const folder = folderId ? Storage.listFolders().find(f => f.id === folderId) : null;
   // 新建时：当前位于某个文件夹内 → 在其中创建子文件夹；否则创建顶层文件夹
   let parentId = null;
-  if (mode === "new" && typeof currentFolder === "string" && currentFolder !== "NONE") {
+  if (mode === "new" && typeof currentFolder === "string") {
     parentId = currentFolder;
   }
   folderModalMode = { mode, id: folderId || null, parentId };
@@ -330,7 +320,7 @@ function handleFolderAction(fact, id) {
   } else if (fact === "ren") {
     openFolderModal("ren", id);
   } else if (fact === "del") {
-    if (confirm("删除该文件夹后，里面的教案会移到「未分类」、子文件夹会上移一级，不会丢失。确定删除吗？")) {
+    if (confirm("删除该文件夹后，里面的教案会移到首页、子文件夹会上移一级，不会丢失。确定删除吗？")) {
       Storage.removeFolder(id);
       if (currentFolder === id) currentFolder = null;
       render(searchInput.value);
@@ -351,12 +341,40 @@ breadcrumb.addEventListener("click", (e) => {
 document.getElementById("new-folder-btn").addEventListener("click", () => handleFolderAction("new", null));
 
 // 左侧栏整体作为拖放区（事件委托，重渲染后依然有效）：
-// 拖到文件夹条目 → 移入该文件夹；拖到「全部教案」/「未分类」→ 移到未分类
+// 拖到文件夹条目 → 移入该文件夹；拖到「全部内容」→ 移出文件夹/移到顶层
+// 支持教案和文件夹两种拖拽类型，且不再与逐行绑定的处理器重复触发
+function targetIdOf(row) {
+  const t = row?.dataset.target;
+  return !t || t === "root" ? null : t;
+}
+// 判断 folderId 是否在 maybeAncestorId 的子树内
+function isDescendantOf(folderId, maybeAncestorId, folders) {
+  let cur = folders.find(f => f.id === folderId);
+  const seen = new Set();
+  while (cur && !seen.has(cur.id)) {
+    seen.add(cur.id);
+    if (cur.parentId === maybeAncestorId) return true;
+    cur = folders.find(f => f.id === cur.parentId);
+  }
+  return false;
+}
 sidebar.addEventListener("dragover", (e) => {
   const row = e.target.closest("[data-target]");
-  if (!row || !e.dataTransfer.types.includes("text/plan-id")) return;
+  if (!row) return;
+  const types = e.dataTransfer.types;
+  const isPlan = types.includes("text/plan-id");
+  const isFolder = types.includes("text/folder-id");
+  if (!isPlan && !isFolder) return;
+  const target = targetIdOf(row);
+  // 文件夹不能拖到自己或自己的后代上（不高亮，提示不可放置）
+  if (isFolder && draggingFolderId) {
+    if (target === draggingFolderId) return;
+    if (target && isDescendantOf(target, draggingFolderId, Storage.listFolders())) return;
+  }
   e.preventDefault();
   e.dataTransfer.dropEffect = "move";
+  const prev = sidebar.querySelector(".drag-over");
+  if (prev && prev !== row) prev.classList.remove("drag-over");
   row.classList.add("drag-over");
 });
 sidebar.addEventListener("dragleave", (e) => {
@@ -369,11 +387,17 @@ sidebar.addEventListener("drop", (e) => {
   e.preventDefault();
   row.classList.remove("drag-over");
   const planId = e.dataTransfer.getData("text/plan-id");
-  if (!planId) return;
-  const target = row.dataset.target;
-  const folder = Storage.listFolders().find(f => f.id === target);
-  Storage.movePlan(planId, folder ? folder.id : null);
-  showToast("已移动到 " + (folder ? folder.name : "未分类"));
+  const draggedFolderId = e.dataTransfer.getData("text/folder-id");
+  const target = targetIdOf(row);
+  if (planId) {
+    Storage.movePlan(planId, target);
+    showToast(target ? "已移动到该文件夹" : "已移出文件夹");
+  } else if (draggedFolderId && draggedFolderId !== target) {
+    const ok = Storage.moveFolder(draggedFolderId, target);
+    showToast(ok ? (target ? "文件夹已移动" : "文件夹已移到顶层") : "不能移动到自身或其子文件夹内");
+  } else {
+    return;
+  }
   render(searchInput.value);
 });
 
@@ -393,7 +417,7 @@ function openMoveModal(planId) {
   }
   moveModal.querySelector("#move-list").innerHTML =
     treeItems(null, 0) +
-    `<button class="move-item" data-target="">📄 未分类</button>`;
+    `<button class="move-item" data-target="">🏠 全部内容（移出文件夹）</button>`;
   moveModal.style.display = "flex";
 }
 
