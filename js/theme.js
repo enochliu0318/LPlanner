@@ -11,7 +11,7 @@ function applyTheme(theme) {
   else document.documentElement.removeAttribute("data-theme");
   const btn = document.getElementById("theme-toggle");
   if (btn) {
-    btn.textContent = theme === "dark" ? "☀️ 浅色模式" : "🌙 深色模式";
+    btn.textContent = theme === "dark" ? "☀️ 浅色" : "🌙 深色";
     btn.title = theme === "dark" ? "切换到浅色主题" : "切换到深色主题";
   }
 }

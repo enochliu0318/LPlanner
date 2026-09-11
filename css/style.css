@@ -122,7 +122,14 @@ button, input, textarea, select {
   display: flex;
   flex-direction: column;
   gap: 26px;
-  box-shadow: var(--shadow-md);
+  /* 底部预留空间，避免左下角的主题按钮压住引言文字 */
+  padding-bottom: 52px;
+  /* 立体感：右侧边缘高光 + 多层投影，像立在桌面上的黑板 */
+  box-shadow:
+    inset -1px 0 0 rgba(255, 255, 255, 0.14),
+    inset -6px 0 14px rgba(255, 255, 255, 0.05),
+    2px 0 8px rgba(22, 40, 31, 0.16),
+    6px 0 22px rgba(22, 40, 31, 0.18);
   position: relative;
   z-index: 1;
 }
@@ -200,22 +207,23 @@ button, input, textarea, select {
 /* ---------- 主题切换（深浅色） ---------- */
 
 .app-rail .theme-toggle {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  background: rgba(255,255,255,0.06);
-  color: rgba(242,237,224,0.85);
-  border: 1px solid rgba(255,255,255,0.14);
-  border-radius: var(--radius-s);
-  padding: 8px 12px;
-  font-size: 13px;
+  position: absolute;
+  left: 14px;
+  bottom: 14px;
+  background: rgba(255,255,255,0.05);
+  color: rgba(242,237,224,0.7);
+  border: 1px solid rgba(255,255,255,0.12);
+  border-radius: var(--radius-pill);
+  padding: 4px 10px;
+  font-size: 11px;
+  line-height: 1.5;
   cursor: pointer;
   transition: background .15s var(--ease), color .15s var(--ease), border-color .15s var(--ease);
 }
 .app-rail .theme-toggle:hover {
   background: rgba(255,255,255,0.12);
   color: #fff;
-  border-color: rgba(255,255,255,0.24);
+  border-color: rgba(255,255,255,0.26);
 }
 
 /* ---------- 左栏：已打开教案的标签页 ---------- */

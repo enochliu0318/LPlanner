@@ -8,7 +8,7 @@
 // 提前应用主题，避免深色模式下刷新时闪白
 try { if (localStorage.getItem("lesson_planner_theme") === "dark") document.documentElement.setAttribute("data-theme", "dark"); } catch (e) {}
 </script>
-<link rel="stylesheet" href="css/style.css?v=54" />
+<link rel="stylesheet" href="css/style.css?v=55" />
 </head>
 <body>
 <div class="app-shell">
@@ -22,7 +22,7 @@ try { if (localStorage.getItem("lesson_planner_theme") === "dark") document.docu
       <a href="editor.html">＋ 新建教案</a>
     </nav>
     <div class="rail-tabs" id="rail-tabs"></div>
-    <button class="theme-toggle" id="theme-toggle" title="切换主题">🌙 深色模式</button>
+    <button class="theme-toggle" id="theme-toggle" title="切换主题">🌙 深色</button>
     <div class="rail-foot">
       <span class="rail-foot-text">“无论做什么，都要从心里做，像是给主做的，不是给人做的。”</span>
     </div>
@@ -94,7 +94,7 @@ try { if (localStorage.getItem("lesson_planner_theme") === "dark") document.docu
   </div>
 </div>
 
-<script type="module" src="js/dashboard.js?v=54"></script>
-<script type="module" src="js/theme.js?v=54"></script>
+<script type="module" src="js/dashboard.js?v=55"></script>
+<script type="module" src="js/theme.js?v=55"></script>
 </body>
 </html>
