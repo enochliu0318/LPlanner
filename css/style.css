@@ -462,7 +462,7 @@ button, input, textarea, select {
 }
 
 .breadcrumb-tools input[type="search"] {
-  width: 220px;
+  width: 230px;
   padding: 7px 12px;
   border: 1px solid var(--border);
   border-radius: var(--radius-pill);
@@ -625,7 +625,6 @@ button, input, textarea, select {
   flex-shrink: 0;
 }
 
-/* ---------- 移动教案弹窗 ---------- */
 /* ---------- 移动教案弹窗 ---------- */
 
 .move-modal {
