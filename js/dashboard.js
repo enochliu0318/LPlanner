@@ -1,6 +1,6 @@
-import { Storage } from "./storage.js?v=52";
-import { renderRailTabs } from "./tabs.js?v=52";
-import { isSupported as isFsSupported, connect as connectFs, disconnect as disconnectFs, onStatus as onFsStatus, getStatus as getFsStatus, openInExplorer, getFolderName } from "./fs-sync.js?v=52";
+import { Storage } from "./storage.js?v=53";
+import { renderRailTabs } from "./tabs.js?v=53";
+import { isSupported as isFsSupported, connect as connectFs, disconnect as disconnectFs, onStatus as onFsStatus, getStatus as getFsStatus, openInExplorer, getFolderName } from "./fs-sync.js?v=53";
 
 const grid = document.getElementById("card-grid");
 const emptyState = document.getElementById("empty-state");
@@ -46,6 +46,11 @@ function render(keyword = "") {
             .some(v => v.toLowerCase().includes(kw))
         : true
     );
+  // 搜索时：文件夹按名称匹配（跨整个目录树，不限当前层级）
+  const foldersAll = Storage.listFolders();
+  const kwFolders = kw
+    ? foldersAll.filter(f => f.name.toLowerCase().includes(kw))
+    : [];
 
   // 左栏标签页（在列表页不高亮任何标签）
   renderRailTabs(document.getElementById("rail-tabs"), { activeId: null });
@@ -54,14 +59,16 @@ function render(keyword = "") {
   renderBreadcrumb();
   grid.innerHTML = "";
 
-  // 根目录：始终显示顶层文件夹（即使没有教案）
-  if (currentFolder === null) {
-    Storage.listFolders().filter(f => !f.parentId).forEach(f => grid.appendChild(buildFolderTile(f)));
+  // 搜索时显示名称匹配的所有文件夹；否则按当前层级显示
+  if (kw) {
+    kwFolders.forEach(f => grid.appendChild(buildFolderTile(f)));
+  } else if (currentFolder === null) {
+    foldersAll.filter(f => !f.parentId).forEach(f => grid.appendChild(buildFolderTile(f)));
   } else if (typeof currentFolder === "string") {
-    Storage.listFolders().filter(f => f.parentId === currentFolder).forEach(f => grid.appendChild(buildFolderTile(f)));
+    foldersAll.filter(f => f.parentId === currentFolder).forEach(f => grid.appendChild(buildFolderTile(f)));
   }
 
-  if (all.length === 0 && list.length === 0 && Storage.listFolders().length === 0) {
+  if (all.length === 0 && list.length === 0 && foldersAll.length === 0) {
     emptyState.style.display = "block";
     grid.style.display = "none";
     return;
@@ -69,9 +76,9 @@ function render(keyword = "") {
   emptyState.style.display = "none";
   grid.style.display = "grid";
 
-  if (list.length === 0) {
+  if (list.length === 0 && kwFolders.length === 0) {
     const msg = kw
-      ? `没有找到匹配"${escapeHtml(keyword)}"的教案。`
+      ? `没有找到匹配"${escapeHtml(keyword)}"的教案或文件夹。`
       : "此处暂无教案，可把教案卡片拖到左侧文件夹，或在卡片上点「移动」。";
     const emptyMsg = document.createElement("p");
     emptyMsg.style.color = "var(--ink-faint)";
