@@ -1277,6 +1277,8 @@ input:focus, textarea:focus, select:focus {
   padding: 26px;
   width: 90%;
   max-width: 440px;
+  max-height: 85vh;
+  overflow-y: auto;
   box-shadow: var(--shadow-lg);
   animation: modal-pop-in 0.2s var(--ease);
 }

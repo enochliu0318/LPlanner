@@ -158,7 +158,7 @@ async function mirrorAll() {
   }
 
   // 3. 递归清理所有废弃文件（遍历整个目录树）
-  async function cleanDir(dir) {
+  async function cleanDir(dir, pathStr) {
     const subdirs = [];
     for (const { name, handle } of await listDir(dir)) {
       if (handle.kind === "file") {
@@ -170,10 +170,11 @@ async function mirrorAll() {
         subdirs.push({ name, handle });
       }
     }
-    // 递归清理子目录，如果子目录变空则删除
+    // 递归清理子目录，如果子目录变空且不是合法文件夹目录则删除
     for (const { name, handle } of subdirs) {
-      await cleanDir(handle);
-      // 检查目录是否为空
+      const subPath = pathStr ? `${pathStr}/${name}` : name;
+      await cleanDir(handle, subPath);
+      if (validPaths.has(subPath)) continue; // 合法文件夹目录即使为空也保留
       let isEmpty = true;
       for await (const _ of handle.entries()) { isEmpty = false; break; }
       if (isEmpty) {
@@ -181,7 +182,7 @@ async function mirrorAll() {
       }
     }
   }
-  await cleanDir(rootHandle);
+  await cleanDir(rootHandle, "");
   ourDirs = new Set(validPaths);
 }
 
@@ -235,6 +236,17 @@ async function importFromDir() {
 async function finishConnect() {
   setStatus("connecting", rootHandle.name);
   const res = await enqueue(async () => {
+    const folders = JSON.parse(localStorage.getItem("lesson_planner_folders_v1") || "[]");
+    const plans = JSON.parse(localStorage.getItem("lesson_planner_v1") || "[]");
+    if (folders.length || plans.length) {
+      // 网站已有数据：以网站为准 —— 先清理磁盘上的废弃文件/文件夹，再导入剩余内容
+      await mirrorAll();
+      const imp = await importFromDir();
+      // 导入可能带来了更新的版本（updatedAt 更新），再镜像一次保证一致
+      if (imp.importedFolders || imp.importedPlans) await mirrorAll();
+      return imp;
+    }
+    // 网站为空（首次使用或清空过数据）：从磁盘恢复全部内容
     const imp = await importFromDir();
     await mirrorAll();
     return imp;
