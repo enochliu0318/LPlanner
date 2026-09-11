@@ -4,7 +4,11 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>编辑教案 · 备课本</title>
-<link rel="stylesheet" href="css/style.css?v=53" />
+<script>
+// 提前应用主题，避免深色模式下刷新时闪白
+try { if (localStorage.getItem("lesson_planner_theme") === "dark") document.documentElement.setAttribute("data-theme", "dark"); } catch (e) {}
+</script>
+<link rel="stylesheet" href="css/style.css?v=54" />
 </head>
 <body>
 <div class="app-shell">
@@ -18,6 +22,7 @@
       <a href="editor.html" class="active">＋ 新建教案</a>
     </nav>
     <div class="rail-tabs" id="rail-tabs"></div>
+    <button class="theme-toggle" id="theme-toggle" title="切换主题">🌙 深色模式</button>
     <div class="rail-foot">
       <span class="rail-foot-text">“无论做什么，都要从心里做，像是给主做的，不是给人做的。”</span>
     </div>
@@ -235,6 +240,7 @@
 
 <div class="toast" id="toast"></div>
 
-<script type="module" src="js/editor.js?v=53"></script>
+<script type="module" src="js/editor.js?v=54"></script>
+<script type="module" src="js/theme.js?v=54"></script>
 </body>
 </html>

@@ -26,6 +26,11 @@
   --ink-faint: #8d8371;
   --border: #ddd2b4;
 
+  /* 语义别名：强调文字色（深色主题下单独指定，与用作背景的绿色解耦） */
+  --heading: #16281f;
+  --accent-text: #2a4d3c;
+  --accent-text-strong: #1f3a2e;
+
   --font-serif: 'Source Serif 4', 'Songti SC', serif;
   --font-sans: 'IBM Plex Sans', 'PingFang SC', 'Microsoft YaHei', sans-serif;
   --font-mono: 'IBM Plex Mono', monospace;
@@ -47,6 +52,31 @@
   --ease: cubic-bezier(.4, 0, .2, 1);
 
   --shadow-card: var(--shadow-xs);
+
+  color-scheme: light;
+}
+
+/* ---------- 深色主题（夜读模式） ---------- */
+/* 黑板绿导航保持不变；内容区切换为深色纸张 */
+[data-theme="dark"] {
+  color-scheme: dark;
+  --paper: #1d221e;
+  --paper-card: #252b26;
+  --kraft: #2f3630;
+  --kraft-line: #3f4841;
+  --ink: #e7e2d6;
+  --ink-soft: #b4ad9e;
+  --ink-faint: #8a8477;
+  --border: #3c443d;
+  --heading: #d8ecde;
+  --accent-text: #93d2b1;
+  --accent-text-strong: #abe0c2;
+  --pencil-red: #d97757;
+  --pencil-red-dark: #b44531;
+  --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.25);
+  --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.32);
+  --shadow-md: 0 10px 28px rgba(0, 0, 0, 0.42);
+  --shadow-lg: 0 20px 52px rgba(0, 0, 0, 0.55);
 }
 
 * { box-sizing: border-box; }
@@ -64,11 +94,11 @@ html, body {
 h1, h2, h3, h4 {
   font-family: var(--font-serif);
   font-weight: 600;
-  color: var(--ink-green-900);
+  color: var(--heading);
   margin: 0 0 0.4em 0;
 }
 
-a { color: var(--ink-green-700); }
+a { color: var(--accent-text); }
 
 button, input, textarea, select {
   font-family: inherit;
@@ -165,6 +195,27 @@ button, input, textarea, select {
   font-family: var(--font-serif);
   font-size: 12.5px;
   color: rgba(242,237,224,0.68);
+}
+
+/* ---------- 主题切换（深浅色） ---------- */
+
+.app-rail .theme-toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(255,255,255,0.06);
+  color: rgba(242,237,224,0.85);
+  border: 1px solid rgba(255,255,255,0.14);
+  border-radius: var(--radius-s);
+  padding: 8px 12px;
+  font-size: 13px;
+  cursor: pointer;
+  transition: background .15s var(--ease), color .15s var(--ease), border-color .15s var(--ease);
+}
+.app-rail .theme-toggle:hover {
+  background: rgba(255,255,255,0.12);
+  color: #fff;
+  border-color: rgba(255,255,255,0.24);
 }
 
 /* ---------- 左栏：已打开教案的标签页 ---------- */
@@ -375,7 +426,7 @@ button, input, textarea, select {
   font-size: 11px;
   font-weight: 600;
   letter-spacing: 0.03em;
-  color: var(--ink-green-800);
+  color: var(--accent-text-strong);
   background: var(--kraft);
   border-radius: var(--radius-pill);
   padding: 3px 10px;
@@ -450,7 +501,7 @@ button, input, textarea, select {
   transition: background .14s var(--ease), color .14s var(--ease);
 }
 .crumb:hover { background: var(--kraft); color: var(--ink); }
-.crumb.active { color: var(--ink-green-800); font-weight: 600; }
+.crumb.active { color: var(--accent-text-strong); font-weight: 600; }
 .crumb-sep { color: var(--ink-faint); }
 
 .breadcrumb-tools {
@@ -533,7 +584,7 @@ button, input, textarea, select {
   transition: background .14s var(--ease), color .14s var(--ease);
 }
 .xsidebar-item:hover { background: var(--kraft); }
-.xsidebar-item.active { background: var(--kraft); color: var(--ink-green-800); font-weight: 600; }
+.xsidebar-item.active { background: var(--kraft); color: var(--accent-text-strong); font-weight: 600; }
 .xsidebar-item .xcount {
   margin-left: auto;
   font-size: 10.5px;
@@ -543,7 +594,7 @@ button, input, textarea, select {
   padding: 1px 7px;
   flex-shrink: 0;
 }
-.xsidebar-item.active .xcount { color: var(--ink-green-700); }
+.xsidebar-item.active .xcount { color: var(--accent-text); }
 
 .xsidebar-actions { display: none; gap: 2px; }
 .xsidebar-row:hover .xsidebar-actions { display: inline-flex; }
@@ -566,7 +617,7 @@ button, input, textarea, select {
   color: var(--ink-faint);
   justify-content: center;
 }
-.xsidebar-add:hover { color: var(--ink-green-800); border-color: var(--ink-green-700); background: var(--kraft); }
+.xsidebar-add:hover { color: var(--accent-text-strong); border-color: var(--accent-text); background: var(--kraft); }
 
 .explorer-main { flex: 1; min-width: 0; }
 
@@ -591,7 +642,7 @@ button, input, textarea, select {
 .folder-card h3 {
   font-size: 16px;
   text-align: center;
-  color: var(--ink-green-900);
+  color: var(--heading);
 }
 
 .folder-card .plan-meta {
@@ -704,7 +755,7 @@ button, input, textarea, select {
   color: var(--ink-soft);
 }
 
-.empty-state h2 { color: var(--ink-green-800); font-size: 19px; margin-bottom: 8px; }
+.empty-state h2 { color: var(--accent-text-strong); font-size: 19px; margin-bottom: 8px; }
 
 /* ---------- 表单（编辑器） ---------- */
 
@@ -719,7 +770,7 @@ button, input, textarea, select {
 .form-section h2 {
   font-size: 15px;
   text-transform: none;
-  color: var(--ink-green-800);
+  color: var(--accent-text-strong);
   border-bottom: 1px solid var(--kraft-line);
   padding-bottom: 10px;
   margin-bottom: 16px;
@@ -795,8 +846,8 @@ input:focus, textarea:focus, select:focus {
   cursor: pointer;
 }
 .rich-toolbar .rt-btn:hover {
-  border-color: var(--ink-green-700);
-  color: var(--ink-green-800);
+  border-color: var(--accent-text);
+  color: var(--accent-text-strong);
   background: var(--paper);
 }
 .rich-toolbar .rt-italic,
@@ -854,7 +905,7 @@ input:focus, textarea:focus, select:focus {
   color: var(--ink-soft);
   transition: border-color .14s var(--ease), color .14s var(--ease), background .14s var(--ease);
 }
-.icon-btn:hover { border-color: var(--ink-green-700); color: var(--ink-green-800); background: var(--kraft); }
+.icon-btn:hover { border-color: var(--accent-text); color: var(--accent-text-strong); background: var(--kraft); }
 
 .add-row-btn {
   margin-top: 4px;
@@ -1149,7 +1200,7 @@ input:focus, textarea:focus, select:focus {
   min-width: 0;
   border: 1px solid var(--border);
   border-radius: var(--radius-xs);
-  background: #fff;
+  background: var(--paper-card);
   font-size: 12px;
   padding: 5px 7px;
   color: var(--ink);
@@ -1315,7 +1366,7 @@ input:focus, textarea:focus, select:focus {
 }
 
 .ai-setup-notice a {
-  color: var(--ink-green-700);
+  color: var(--accent-text);
 }
 
 .ai-modal-actions {
@@ -1338,7 +1389,7 @@ input:focus, textarea:focus, select:focus {
 }
 
 .ai-test-result.success {
-  color: var(--ink-green-700);
+  color: var(--accent-text);
 }
 
 .ai-test-result.error {
@@ -1402,6 +1453,11 @@ input:focus, textarea:focus, select:focus {
   z-index: 50;
 }
 .toast.show { opacity: 1; transform: translateY(0); }
+
+/* 深色主题下微调（保存状态、状态提示等硬编码色的可读性） */
+[data-theme="dark"] .save-status[data-status="saved"] { color: #7fd39a; }
+[data-theme="dark"] .save-status[data-status="unsaved"] { color: #e89380; }
+[data-theme="dark"] .save-status[data-status="saving"] { color: #93c2ef; }
 
 /* ---------- 打印视图（导出 PDF 用） ---------- */
 
