@@ -149,22 +149,26 @@ async function mirrorAll() {
     validPaths.add(parts.join("/"));
     await getDirByPath(parts, true);
   }
-  const validId6 = new Set();
+  // 合法文件的完整相对路径（路径+文件名都正确才算合法）
+  const validFiles = new Set();
   for (const p of plans) {
-    validId6.add(String(p.id).slice(-6));
     const dirPath = p.folderId ? folderPathOf(p.folderId, folders) : [];
     const dir = await getDirByPath(dirPath, true);
-    await writeJson(await dir.getFileHandle(planFileName(p), { create: true }), p);
+    const fileName = planFileName(p);
+    await writeJson(await dir.getFileHandle(fileName, { create: true }), p);
+    validFiles.add([...dirPath, fileName].join("/"));
   }
 
-  // 3. 递归清理所有废弃文件（遍历整个目录树）
+  // 3. 递归清理所有废弃文件（按完整路径判断，遍历整个目录树）
   async function cleanDir(dir, pathStr) {
     const subdirs = [];
     for (const { name, handle } of await listDir(dir)) {
       if (handle.kind === "file") {
+        // 只处理匹配我们命名模式的 .json，绝不碰用户自己的文件
         const m = name.match(ID_RE);
-        if (m && !validId6.has(m[1])) {
-          try { await dir.removeEntry(name); } catch (err) {}
+        const fullPath = pathStr ? `${pathStr}/${name}` : name;
+        if (m && !validFiles.has(fullPath)) {
+          try { await dir.removeEntry(name); } catch (err) { console.warn("[fs-sync] 删除废弃文件失败:", fullPath, err); }
         }
       } else if (handle.kind === "directory") {
         subdirs.push({ name, handle });
@@ -178,7 +182,7 @@ async function mirrorAll() {
       let isEmpty = true;
       for await (const _ of handle.entries()) { isEmpty = false; break; }
       if (isEmpty) {
-        try { await dir.removeEntry(name); } catch (err) {}
+        try { await dir.removeEntry(name); } catch (err) { console.warn("[fs-sync] 删除空目录失败:", subPath, err); }
       }
     }
   }
