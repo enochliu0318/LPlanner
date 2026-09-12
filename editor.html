@@ -8,7 +8,7 @@
 // 提前应用主题，避免深色模式下刷新时闪白
 try { if (localStorage.getItem("lesson_planner_theme") === "dark") document.documentElement.setAttribute("data-theme", "dark"); } catch (e) {}
 </script>
-<link rel="stylesheet" href="css/style.css?v=57" />
+<link rel="stylesheet" href="css/style.css?v=59" />
 </head>
 <body>
 <div class="app-shell">
@@ -36,7 +36,7 @@ try { if (localStorage.getItem("lesson_planner_theme") === "dark") document.docu
       </div>
       <div class="toolbar">
         <a class="btn btn-ghost" href="index.html">← 返回列表</a>
-        <button class="btn" id="export-pdf-btn">导出 PDF</button>
+        <button class="btn" id="export-pdf-btn" title="生成文字版 PDF（可选中复制、可搜索）。在打印对话框的目标打印机中选择『另存为 PDF』即可。">导出 PDF</button>
         <button class="btn" id="export-docx-btn">导出 Word</button>
         <button class="btn" id="export-backup-btn">导出备份</button>
         <button class="btn" id="open-folder-btn" style="display:none" title="在系统资源管理器中打开文件夹">📂 打开文件夹</button>
@@ -240,7 +240,7 @@ try { if (localStorage.getItem("lesson_planner_theme") === "dark") document.docu
 
 <div class="toast" id="toast"></div>
 
-<script type="module" src="js/editor.js?v=57"></script>
-<script type="module" src="js/theme.js?v=57"></script>
+<script type="module" src="js/editor.js?v=59"></script>
+<script type="module" src="js/theme.js?v=59"></script>
 </body>
 </html>

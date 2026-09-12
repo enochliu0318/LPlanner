@@ -1,10 +1,10 @@
-import { Storage } from "./storage.js?v=57";
-import { exportPlanToDocx } from "./docx-export.js?v=57";
-import { exportPlanToPdf } from "./pdf-export.js?v=57";
-import { Tabs, NEW_TAB, renderRailTabs } from "./tabs.js?v=57";
-import { buildDocumentModel } from "./document-model.js?v=57";
-import { sendMessage, AI_MODELS, getAiConfig, saveAiConfig } from "./ai.js?v=57";
-import { onStatus as onFsStatus, openInExplorer, getFolderName } from "./fs-sync.js?v=57";
+import { Storage } from "./storage.js?v=59";
+import { exportPlanToDocx } from "./docx-export.js?v=59";
+import { exportPlanToPdf } from "./pdf-export.js?v=59";
+import { Tabs, NEW_TAB, renderRailTabs } from "./tabs.js?v=59";
+import { buildDocumentModel } from "./document-model.js?v=59";
+import { sendMessage, AI_MODELS, getAiConfig, saveAiConfig } from "./ai.js?v=59";
+import { onStatus as onFsStatus, openInExplorer, getFolderName } from "./fs-sync.js?v=59";
 
 const params = new URLSearchParams(location.search);
 const existingId = params.get("id");
@@ -253,7 +253,7 @@ $("#export-pdf-btn").addEventListener("click", async () => {
     await exportPlanToPdf(plan, buildPrintHtml);
   } catch (err) {
     console.error(err);
-    alert("导出 PDF 失败，请检查网络是否可以访问 PDF 组件（首次导出需要联网加载一次）。");
+    alert("导出 PDF 失败，请重试。");
   }
 });
 
