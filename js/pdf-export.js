@@ -5,7 +5,7 @@
     与打印视图排版 1:1 一致。不再使用 html2canvas 截图。
     ============================================================ */
 
-import { buildDocumentModel } from "./document-model.js?v=59";
+import { buildDocumentModel } from "./document-model.js?v=60";
 
 /**
  * 导出教案为 PDF 文件（文字版，通过浏览器打印对话框）

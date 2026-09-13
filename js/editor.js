@@ -1,10 +1,10 @@
-import { Storage } from "./storage.js?v=59";
-import { exportPlanToDocx } from "./docx-export.js?v=59";
-import { exportPlanToPdf } from "./pdf-export.js?v=59";
-import { Tabs, NEW_TAB, renderRailTabs } from "./tabs.js?v=59";
-import { buildDocumentModel } from "./document-model.js?v=59";
-import { sendMessage, AI_MODELS, getAiConfig, saveAiConfig } from "./ai.js?v=59";
-import { onStatus as onFsStatus, openInExplorer, getFolderName } from "./fs-sync.js?v=59";
+import { Storage } from "./storage.js?v=60";
+import { exportPlanToDocx } from "./docx-export.js?v=60";
+import { exportPlanToPdf } from "./pdf-export.js?v=60";
+import { Tabs, NEW_TAB, renderRailTabs } from "./tabs.js?v=60";
+import { buildDocumentModel } from "./document-model.js?v=60";
+import { sendMessage, getAiConfig, saveAiConfig } from "./ai.js?v=60";
+import { onStatus as onFsStatus, openInExplorer, getFolderName } from "./fs-sync.js?v=60";
 
 const params = new URLSearchParams(location.search);
 const existingId = params.get("id");
@@ -472,13 +472,9 @@ $("#ai-input").addEventListener("keydown", (e) => {
 // AI Settings modal
 function openAiSettings() {
   const config = getAiConfig();
-  const select = $("#ai-model-select");
-  select.innerHTML = AI_MODELS.map(m =>
-    '<option value="' + m.id + '"' + (m.id === config.model ? " selected" : "") + ">" + m.name + "</option>"
-  ).join("");
-  $("#ai-api-key").value = config.apiKey || "";
-  $("#ai-model-custom").value = "";
-  $("#ai-modal").style.display = "flex";
+  $(`#ai-api-key`).value = config.apiKey || "";
+  $(`#ai-model-custom`).value = config.model || "";
+  $(`#ai-modal`).style.display = "flex";
 }
 
 function closeAiSettings() {
@@ -489,8 +485,7 @@ $("#ai-chat-settings").addEventListener("click", openAiSettings);
 $("#ai-modal-backdrop").addEventListener("click", closeAiSettings);
 $("#ai-cancel-settings").addEventListener("click", closeAiSettings);
 $("#ai-save-settings").addEventListener("click", () => {
-  const customModel = $("#ai-model-custom").value.trim();
-  const model = customModel || $("#ai-model-select").value;
+  const model = $("#ai-model-custom").value.trim() || "qwen3.8-27b";
   const apiKey = $("#ai-api-key").value.trim();
   saveAiConfig({ model, apiKey });
   closeAiSettings();
@@ -507,7 +502,7 @@ $("#ai-test-btn").addEventListener("click", async () => {
 
   try {
     const config = {
-      model: $("#ai-model-select").value,
+      model: $("#ai-model-custom").value.trim() || "qwen3.8-27b",
       apiKey: $("#ai-api-key").value.trim(),
     };
     const headers = { "Content-Type": "application/json" };
