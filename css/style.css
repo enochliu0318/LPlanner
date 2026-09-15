@@ -1332,8 +1332,40 @@ input:focus, textarea:focus, select:focus {
   max-width: 440px;
   max-height: 85vh;
   overflow-y: auto;
+  /* 滚动条不贴着内容，留一点呼吸感 */
+  scrollbar-gutter: stable;
+  padding-right: 22px;
   box-shadow: var(--shadow-lg);
   animation: modal-pop-in 0.2s var(--ease);
+}
+
+/* 精致细滚动条：圆角胶囊 + 主题色调，悬停加深 */
+.ai-modal-content::-webkit-scrollbar {
+  width: 8px;
+}
+.ai-modal-content::-webkit-scrollbar-track {
+  background: transparent;
+  margin: 6px 0;
+}
+.ai-modal-content::-webkit-scrollbar-thumb {
+  background: var(--kraft-line);
+  border-radius: var(--radius-pill);
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+.ai-modal-content::-webkit-scrollbar-thumb:hover {
+  background: var(--ink-faint);
+  background-clip: padding-box;
+}
+.ai-modal-content::-webkit-scrollbar-corner {
+  background: transparent;
+}
+.ai-modal-content {
+  scrollbar-width: thin;
+  scrollbar-color: var(--kraft-line) transparent;
+}
+[data-theme="dark"] .ai-modal-content {
+  scrollbar-color: var(--kraft-line) transparent;
 }
 
 .ai-modal-content h3 {
