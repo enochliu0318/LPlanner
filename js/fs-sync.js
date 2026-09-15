@@ -15,7 +15,7 @@
    - 仅支持 Chrome / Edge；其他浏览器自动隐藏该功能
    ============================================================ */
 
-import { Storage } from "./storage.js?v=61";
+import { Storage } from "./storage.js?v=62";
 
 const DB_NAME = "lesson_planner_fs";
 const STORE = "handles";
@@ -311,33 +311,6 @@ async function tryAutoConnect() {
 
 /* 订阅数据变更 → 防抖后镜像到磁盘 */
 Storage.onChange(scheduleMirror);
-
-/* ---------- 打开文件夹在系统资源管理器中 ---------- */
-
-/**
- * 尝试在系统文件资源管理器中打开当前连接的文件夹
- * 由于浏览器安全限制，无法直接打开 file:// 路径
- * 这里使用 showDirectoryPicker 重新选择（浏览器会高亮之前选的文件夹）
- */
-export async function openInExplorer() {
-  if (!rootHandle) return false;
-  try {
-    // 方法1：尝试使用 showDirectoryPicker 让用户重新选择（会记住上次位置）
-    // 这不是完美的"打开资源管理器"，但是最接近的跨浏览器方案
-    const handle = await window.showDirectoryPicker({ mode: "readwrite" });
-    if (handle) {
-      rootHandle = handle;
-      await saveHandle(handle);
-      await finishConnect();
-      return true;
-    }
-  } catch (err) {
-    // 用户取消选择
-    if (err.name === "AbortError") return false;
-    console.error("打开文件夹失败:", err);
-  }
-  return false;
-}
 
 /**
  * 获取当前连接文件夹的名称

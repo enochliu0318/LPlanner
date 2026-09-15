@@ -1,6 +1,6 @@
-import { Storage } from "./storage.js?v=61";
-import { renderRailTabs } from "./tabs.js?v=61";
-import { isSupported as isFsSupported, connect as connectFs, disconnect as disconnectFs, onStatus as onFsStatus, getStatus as getFsStatus, openInExplorer, getFolderName } from "./fs-sync.js?v=61";
+import { Storage } from "./storage.js?v=62";
+import { renderRailTabs } from "./tabs.js?v=62";
+import { isSupported as isFsSupported, connect as connectFs, disconnect as disconnectFs, onStatus as onFsStatus, getStatus as getFsStatus, getFolderName } from "./fs-sync.js?v=62";
 
 const grid = document.getElementById("card-grid");
 const emptyState = document.getElementById("empty-state");
@@ -546,16 +546,6 @@ async function handleDisconnect() {
   }
 }
 
-async function handleOpenFolder() {
-  try {
-    await openInExplorer();
-  } catch (err) {
-    if (err.name !== "AbortError") {
-      showToast("打开失败: " + err.message);
-    }
-  }
-}
-
 // 初始化文件系统同步
 if (isFsSupported()) {
   if (fsBtn) fsBtn.style.display = "inline-flex";
@@ -563,14 +553,6 @@ if (isFsSupported()) {
   onFsStatus(updateFsBtn);
 }
 
-// 打开文件夹按钮
-const openFolderBtn = document.getElementById("open-folder-btn");
-if (openFolderBtn) {
-  openFolderBtn.addEventListener("click", handleOpenFolder);
-  // 只在已连接时显示
-  onFsStatus((status) => {
-    openFolderBtn.style.display = status === "connected" ? "inline-flex" : "none";
-  });
-}
+// 打开文件夹按钮已移除——该功能与「连接本地文件夹」重复
 
 render();

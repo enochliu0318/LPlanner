@@ -8,7 +8,7 @@
 // 提前应用主题，避免深色模式下刷新时闪白
 try { if (localStorage.getItem("lesson_planner_theme") === "dark") document.documentElement.setAttribute("data-theme", "dark"); } catch (e) {}
 </script>
-<link rel="stylesheet" href="css/style.css?v=61" />
+<link rel="stylesheet" href="css/style.css?v=62" />
 </head>
 <body>
 <div class="app-shell">
@@ -36,7 +36,6 @@ try { if (localStorage.getItem("lesson_planner_theme") === "dark") document.docu
       </div>
       <div class="toolbar">
         <button class="btn" id="fs-sync-btn" style="display:none" title="把教案实时镜像为本地真实文件夹和 JSON 文件">📂 连接本地文件夹</button>
-        <button class="btn" id="open-folder-btn" style="display:none" title="在系统资源管理器中打开文件夹">📂 打开文件夹</button>
         <button class="btn" id="import-backup-btn">导入备份</button>
         <button class="btn" id="export-backup-btn">导出备份</button>
         <a class="btn btn-accent" href="editor.html">＋ 新建教案</a>
@@ -94,7 +93,7 @@ try { if (localStorage.getItem("lesson_planner_theme") === "dark") document.docu
   </div>
 </div>
 
-<script type="module" src="js/dashboard.js?v=61"></script>
-<script type="module" src="js/theme.js?v=61"></script>
+<script type="module" src="js/dashboard.js?v=62"></script>
+<script type="module" src="js/theme.js?v=62"></script>
 </body>
 </html>
