@@ -1,10 +1,10 @@
-import { Storage } from "./storage.js?v=62";
-import { exportPlanToDocx } from "./docx-export.js?v=62";
-import { exportPlanToPdf } from "./pdf-export.js?v=62";
-import { Tabs, NEW_TAB, renderRailTabs } from "./tabs.js?v=62";
-import { buildDocumentModel } from "./document-model.js?v=62";
-import { sendMessage, getAiConfig, saveAiConfig } from "./ai.js?v=62";
-import { onStatus as onFsStatus, getFolderName } from "./fs-sync.js?v=62";
+import { Storage } from "./storage.js?v=65";
+import { exportPlanToDocx } from "./docx-export.js?v=65";
+import { exportPlanToPdf } from "./pdf-export.js?v=65";
+import { Tabs, NEW_TAB, renderRailTabs } from "./tabs.js?v=65";
+import { buildDocumentModel } from "./document-model.js?v=65";
+import { sendMessage, getAiConfig, saveAiConfig } from "./ai.js?v=65";
+import { onStatus as onFsStatus, getFolderName } from "./fs-sync.js?v=65";
 
 const params = new URLSearchParams(location.search);
 const existingId = params.get("id");
@@ -348,7 +348,132 @@ $("#ai-chat-close").addEventListener("click", () => {
   $("#ai-chat").style.display = "none";
 });
 
-// Add message to chat
+/* ---------- AI 窗口拖动 & 缩放（位置/大小持久化） ---------- */
+
+const AI_CHAT_RECT_KEY = "lesson_planner_ai_chat_v1";
+const aiChatEl = $("#ai-chat");
+const aiChatHeader = $(".ai-chat-header");
+const aiChatGrip = $("#ai-chat-resize");
+let aiChatDrag = null;
+
+function saveAiChatRect() {
+  try {
+    localStorage.setItem(AI_CHAT_RECT_KEY, JSON.stringify({
+      left: aiChatEl.style.left,
+      top: aiChatEl.style.top,
+      width: aiChatEl.style.width,
+      height: aiChatEl.style.height,
+    }));
+  } catch (err) { /* 存储不可用时忽略 */ }
+}
+
+function restoreAiChatRect() {
+  try {
+    const raw = localStorage.getItem(AI_CHAT_RECT_KEY);
+    if (!raw) return;
+    const rect = JSON.parse(raw);
+    if (rect.left) {
+      aiChatEl.style.left = rect.left;
+      aiChatEl.style.top = rect.top;
+      aiChatEl.style.right = "auto";
+      aiChatEl.style.bottom = "auto";
+    }
+    if (rect.width) aiChatEl.style.width = rect.width;
+    if (rect.height) {
+      aiChatEl.style.height = rect.height;
+      aiChatEl.classList.add("ai-chat-resized");
+    }
+  } catch (err) { /* 数据损坏时忽略 */ }
+}
+
+// 按住标题栏拖动窗口位置
+aiChatHeader.addEventListener("mousedown", (e) => {
+  if (e.target.closest(".ai-chat-tool")) return; // 点工具按钮不触发拖动
+  const rect = aiChatEl.getBoundingClientRect();
+  aiChatDrag = {
+    type: "move",
+    startX: e.clientX, startY: e.clientY,
+    origLeft: rect.left, origTop: rect.top,
+    origW: rect.width, origH: rect.height,
+  };
+  document.body.style.userSelect = "none";
+  e.preventDefault();
+});
+
+// 左下角把手调整窗口大小（向左拖变宽，向下拖变高）
+aiChatGrip.addEventListener("mousedown", (e) => {
+  const rect = aiChatEl.getBoundingClientRect();
+  aiChatDrag = {
+    type: "resize",
+    startX: e.clientX, startY: e.clientY,
+    origLeft: rect.left, origTop: rect.top,
+    origW: rect.width, origH: rect.height,
+  };
+  aiChatEl.classList.add("ai-chat-resized");
+  document.body.style.userSelect = "none";
+  e.preventDefault();
+  e.stopPropagation();
+});
+
+window.addEventListener("mousemove", (e) => {
+  if (!aiChatDrag) return;
+  const dx = e.clientX - aiChatDrag.startX;
+  const dy = e.clientY - aiChatDrag.startY;
+  if (aiChatDrag.type === "move") {
+    // 限制在视口内：至少露出 120px 宽度，标题栏不拖出顶部
+    const minLeft = -(aiChatDrag.origW - 120);
+    const maxLeft = window.innerWidth - 120;
+    const minTop = 0;
+    const maxTop = window.innerHeight - 48;
+    const left = Math.min(Math.max(aiChatDrag.origLeft + dx, minLeft), maxLeft);
+    const top = Math.min(Math.max(aiChatDrag.origTop + dy, minTop), maxTop);
+    aiChatEl.style.left = Math.round(left) + "px";
+    aiChatEl.style.top = Math.round(top) + "px";
+    aiChatEl.style.right = "auto";
+    aiChatEl.style.bottom = "auto";
+  } else {
+    // 锁定右边缘，让左边缘跟随鼠标（把手在左下角）
+    const rightEdge = aiChatDrag.origLeft + aiChatDrag.origW;
+    const newW = Math.min(Math.max(aiChatDrag.origW - dx, 300), window.innerWidth * 0.92);
+    aiChatEl.style.width = Math.round(newW) + "px";
+    aiChatEl.style.left = Math.round(rightEdge - newW) + "px";
+    aiChatEl.style.right = "auto";
+    aiChatEl.style.height = Math.min(Math.max(aiChatDrag.origH + dy, 320), window.innerHeight * 0.92) + "px";
+  }
+});
+
+window.addEventListener("mouseup", () => {
+  if (!aiChatDrag) return;
+  aiChatDrag = null;
+  document.body.style.userSelect = "";
+  saveAiChatRect();
+});
+
+restoreAiChatRect();
+
+// Add message to chat（带一键复制）
+async function copyText(text) {
+  try {
+    await navigator.clipboard.writeText(text);
+    return true;
+  } catch (err) {
+    // 剪贴板 API 不可用（如非安全上下文）时的降级方案
+    try {
+      const ta = document.createElement("textarea");
+      ta.value = text;
+      ta.style.position = "fixed";
+      ta.style.opacity = "0";
+      document.body.appendChild(ta);
+      ta.select();
+      const ok = document.execCommand("copy");
+      ta.remove();
+      return ok;
+    } catch (e) {
+      return false;
+    }
+  }
+}
+
 function addMessage(role, content) {
   const messages = $("#ai-messages");
   const msg = document.createElement("div");
@@ -357,63 +482,27 @@ function addMessage(role, content) {
   contentDiv.className = "ai-message-content";
   contentDiv.textContent = content;
   msg.appendChild(contentDiv);
+
+  // 输入和输出内容都支持一键复制
+  if (role === "user" || role === "ai") {
+    const actions = document.createElement("div");
+    actions.className = "ai-message-actions";
+    const copyBtn = document.createElement("button");
+    copyBtn.type = "button";
+    copyBtn.textContent = "复制";
+    copyBtn.title = "复制内容";
+    copyBtn.addEventListener("click", async () => {
+      const ok = await copyText(content);
+      copyBtn.textContent = ok ? "已复制 ✓" : "复制失败";
+      setTimeout(() => { copyBtn.textContent = "复制"; }, 1500);
+    });
+    actions.appendChild(copyBtn);
+    msg.appendChild(actions);
+  }
+
   messages.appendChild(msg);
   messages.scrollTop = messages.scrollHeight;
   return msg;
-}
-
-/* AI 回复填入教案字段 */
-const AI_FILL_TARGETS = [
-  { key: "objectives",      label: "教学目标与要求" },
-  { key: "keyPoints",       label: "教学重点" },
-  { key: "difficultPoints", label: "教学难点" },
-  { key: "methods",         label: "教学方法与手段" },
-  { key: "homework",        label: "作业布置" },
-  { key: "remarks",         label: "备注" },
-  { key: "summary",         label: "课后小结" },
-  { key: "__content",       label: "教学内容及过程（追加）" },
-];
-
-function addFillRow(msgEl, text) {
-  const row = document.createElement("div");
-  row.className = "ai-fill-row";
-
-  const select = document.createElement("select");
-  select.className = "ai-fill-select";
-  select.innerHTML = AI_FILL_TARGETS.map(t =>
-    `<option value="${t.key}">${t.label}</option>`
-  ).join("");
-
-  const btn = document.createElement("button");
-  btn.type = "button";
-  btn.className = "ai-fill-btn";
-  btn.textContent = "填入";
-  btn.addEventListener("click", () => {
-    const target = select.value;
-    if (target === "__content") {
-      // 教学内容及过程：逐行追加为一级条目，不覆盖已有讲稿
-      const lines = text.split(/\n+/).map(s => s.trim()).filter(Boolean);
-      if (!lines.length) { showToast("没有可填入的内容"); return; }
-      let topUl = [...contentEditor.children].find(el => el.tagName === "UL");
-      if (!topUl) { topUl = document.createElement("ul"); contentEditor.appendChild(topUl); }
-      lines.forEach(line => {
-        const li = document.createElement("li");
-        li.textContent = line;
-        topUl.appendChild(li);
-      });
-      readContentEditor();
-      showToast("已追加到「教学内容及过程」");
-    } else {
-      const el = document.getElementById(target);
-      if (el) { el.value = text; plan[target] = text; }
-      showToast("已填入");
-    }
-    dirty = true;
-  });
-
-  row.appendChild(select);
-  row.appendChild(btn);
-  msgEl.appendChild(row);
 }
 
 // Show typing indicator
@@ -452,7 +541,6 @@ async function sendAiMessage() {
     aiHistory.push({ role: "assistant", content: result });
     hideTyping();
     const msgEl = addMessage("ai", result);
-    if (msgEl) addFillRow(msgEl, result);
   } catch (err) {
     hideTyping();
     addMessage("error", "Error: " + err.message);

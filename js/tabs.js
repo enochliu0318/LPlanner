@@ -6,7 +6,7 @@
    其中 "new" 是「新建教案（尚未保存）」的占位标签。
    ============================================================ */
 
-import { Storage } from "./storage.js?v=62";
+import { Storage } from "./storage.js?v=65";
 
 const TABS_KEY = "lesson_planner_tabs_v1";
 export const NEW_TAB = "new";
@@ -72,6 +72,19 @@ export const Tabs = {
     state.tabs = [...new Set(state.tabs.map(t => (t === oldId ? newId : t)))];
     if (state.active === oldId) state.active = newId;
     writeState(state);
+  },
+
+  /** 拖拽排序：把 fromId 移到 toId 的前面（before=true）或后面 */
+  move(fromId, toId, before = true) {
+    const state = readState();
+    const remaining = state.tabs.filter(t => t !== fromId);
+    let idx = remaining.indexOf(toId);
+    if (idx < 0) return false;
+    if (!before) idx += 1;
+    remaining.splice(idx, 0, fromId);
+    state.tabs = remaining;
+    writeState(state);
+    return true;
   }
 };
 
@@ -85,6 +98,8 @@ export function tabHref(id) {
  * @param {HTMLElement} container 挂载容器（.rail-tabs）
  * @param {{activeId?: string|null}} opts 当前页面对应的标签 id；列表页传 null
  */
+let dragTabId = null;
+
 export function renderRailTabs(container, opts = {}) {
   const activeId = opts.activeId ?? null;
   const tabs = Tabs.list();
@@ -110,6 +125,8 @@ export function renderRailTabs(container, opts = {}) {
     const row = document.createElement("div");
     row.className = "rail-tab" + (id === activeId ? " active" : "");
     row.title = label;
+    row.draggable = true;
+    row.dataset.tabId = id;
 
     const title = document.createElement("span");
     title.className = "rail-tab-title";
@@ -139,6 +156,42 @@ export function renderRailTabs(container, opts = {}) {
       } else {
         renderRailTabs(container, opts);
       }
+    });
+
+    /* ---------- 拖拽排序 ---------- */
+    row.addEventListener("dragstart", (e) => {
+      dragTabId = id;
+      e.dataTransfer.effectAllowed = "move";
+      e.dataTransfer.setData("text/plain", id);
+      row.classList.add("dragging");
+    });
+    row.addEventListener("dragend", () => {
+      dragTabId = null;
+      container.querySelectorAll(".rail-tab").forEach(r =>
+        r.classList.remove("dragging", "drop-above", "drop-below"));
+    });
+    row.addEventListener("dragover", (e) => {
+      if (!dragTabId || dragTabId === id) return;
+      e.preventDefault();
+      e.dataTransfer.dropEffect = "move";
+      // 按鼠标位置决定显示「放到上方」还是「放到下方」的指示线
+      const rect = row.getBoundingClientRect();
+      const below = e.clientY > rect.top + rect.height / 2;
+      row.classList.toggle("drop-below", below);
+      row.classList.toggle("drop-above", !below);
+    });
+    row.addEventListener("dragleave", () => {
+      row.classList.remove("drop-above", "drop-below");
+    });
+    row.addEventListener("drop", (e) => {
+      e.preventDefault();
+      row.classList.remove("drop-above", "drop-below");
+      if (!dragTabId || dragTabId === id) return;
+      const rect = row.getBoundingClientRect();
+      const before = e.clientY <= rect.top + rect.height / 2;
+      Tabs.move(dragTabId, id, before);
+      dragTabId = null;
+      renderRailTabs(container, opts);
     });
   });
 }

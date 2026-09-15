@@ -8,7 +8,7 @@
 // 提前应用主题，避免深色模式下刷新时闪白
 try { if (localStorage.getItem("lesson_planner_theme") === "dark") document.documentElement.setAttribute("data-theme", "dark"); } catch (e) {}
 </script>
-<link rel="stylesheet" href="css/style.css?v=62" />
+<link rel="stylesheet" href="css/style.css?v=65" />
 </head>
 <body>
 <div class="app-shell">
@@ -183,6 +183,9 @@ try { if (localStorage.getItem("lesson_planner_theme") === "dark") document.docu
         </svg>
       </button>
     </div>
+
+    <!-- 左下角缩放把手：拖动可调整窗口大小 -->
+    <div class="ai-chat-resize" id="ai-chat-resize" title="拖动调整窗口大小"></div>
   </div>
 
   <!-- AI 设置弹窗 -->
@@ -233,7 +236,7 @@ try { if (localStorage.getItem("lesson_planner_theme") === "dark") document.docu
 
 <div class="toast" id="toast"></div>
 
-<script type="module" src="js/editor.js?v=62"></script>
-<script type="module" src="js/theme.js?v=62"></script>
+<script type="module" src="js/editor.js?v=65"></script>
+<script type="module" src="js/theme.js?v=65"></script>
 </body>
 </html>

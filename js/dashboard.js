@@ -1,6 +1,6 @@
-import { Storage } from "./storage.js?v=62";
-import { renderRailTabs } from "./tabs.js?v=62";
-import { isSupported as isFsSupported, connect as connectFs, disconnect as disconnectFs, onStatus as onFsStatus, getStatus as getFsStatus, getFolderName } from "./fs-sync.js?v=62";
+import { Storage } from "./storage.js?v=65";
+import { renderRailTabs } from "./tabs.js?v=65";
+import { isSupported as isFsSupported, connect as connectFs, disconnect as disconnectFs, onStatus as onFsStatus, getStatus as getFsStatus, getFolderName } from "./fs-sync.js?v=65";
 
 const grid = document.getElementById("card-grid");
 const emptyState = document.getElementById("empty-state");
