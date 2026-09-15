@@ -1,10 +1,10 @@
-import { Storage } from "./storage.js?v=65";
-import { exportPlanToDocx } from "./docx-export.js?v=65";
-import { exportPlanToPdf } from "./pdf-export.js?v=65";
-import { Tabs, NEW_TAB, renderRailTabs } from "./tabs.js?v=65";
-import { buildDocumentModel } from "./document-model.js?v=65";
-import { sendMessage, getAiConfig, saveAiConfig } from "./ai.js?v=65";
-import { onStatus as onFsStatus, getFolderName } from "./fs-sync.js?v=65";
+import { Storage } from "./storage.js?v=67";
+import { exportPlanToDocx } from "./docx-export.js?v=67";
+import { exportPlanToPdf } from "./pdf-export.js?v=67";
+import { Tabs, NEW_TAB, renderRailTabs } from "./tabs.js?v=67";
+import { buildDocumentModel } from "./document-model.js?v=67";
+import { sendMessage, getAiConfig, saveAiConfig } from "./ai.js?v=67";
+import { onStatus as onFsStatus, getFolderName } from "./fs-sync.js?v=67";
 
 const params = new URLSearchParams(location.search);
 const existingId = params.get("id");
@@ -452,6 +452,11 @@ window.addEventListener("mouseup", () => {
 restoreAiChatRect();
 
 // Add message to chat（带一键复制）
+const COPY_ICON_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>';
+const CHECK_ICON_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>';
+const X_ICON_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6L6 18M6 6l12 12"/></svg>';
+const EDIT_ICON_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg>';
+
 async function copyText(text) {
   try {
     await navigator.clipboard.writeText(text);
@@ -474,35 +479,114 @@ async function copyText(text) {
   }
 }
 
-function addMessage(role, content) {
+function addMessage(role, content, historyEntry = null) {
   const messages = $("#ai-messages");
+  // 外层行容器：气泡 + 悬停时显示在气泡下方的操作按钮
+  const row = document.createElement("div");
+  row.className = "ai-message-row ai-message-row-" + role;
+
   const msg = document.createElement("div");
   msg.className = "ai-message ai-message-" + role;
   const contentDiv = document.createElement("div");
   contentDiv.className = "ai-message-content";
   contentDiv.textContent = content;
   msg.appendChild(contentDiv);
+  row.appendChild(msg);
 
-  // 输入和输出内容都支持一键复制
+  // 悬停时显示的操作按钮：复制（输入/输出都有）+ 编辑（仅自己发送的消息）
   if (role === "user" || role === "ai") {
     const actions = document.createElement("div");
     actions.className = "ai-message-actions";
+
     const copyBtn = document.createElement("button");
     copyBtn.type = "button";
-    copyBtn.textContent = "复制";
+    copyBtn.className = "ai-msg-btn";
     copyBtn.title = "复制内容";
+    copyBtn.innerHTML = COPY_ICON_SVG;
     copyBtn.addEventListener("click", async () => {
-      const ok = await copyText(content);
-      copyBtn.textContent = ok ? "已复制 ✓" : "复制失败";
-      setTimeout(() => { copyBtn.textContent = "复制"; }, 1500);
+      const ok = await copyText(contentDiv.textContent);
+      copyBtn.innerHTML = ok ? CHECK_ICON_SVG : X_ICON_SVG;
+      copyBtn.title = ok ? "已复制" : "复制失败";
+      setTimeout(() => {
+        copyBtn.innerHTML = COPY_ICON_SVG;
+        copyBtn.title = "复制内容";
+      }, 1500);
     });
     actions.appendChild(copyBtn);
-    msg.appendChild(actions);
+
+    if (role === "user") {
+      const editBtn = document.createElement("button");
+      editBtn.type = "button";
+      editBtn.className = "ai-msg-btn";
+      editBtn.title = "编辑消息";
+      editBtn.innerHTML = EDIT_ICON_SVG;
+      editBtn.addEventListener("click", () =>
+        startEditMessage(msg, contentDiv, historyEntry, actions));
+      actions.appendChild(editBtn);
+    }
+
+    row.appendChild(actions);
   }
 
-  messages.appendChild(msg);
+  messages.appendChild(row);
   messages.scrollTop = messages.scrollHeight;
-  return msg;
+  return row;
+}
+
+/* ---------- 编辑已发送的消息 ---------- */
+
+function startEditMessage(msgEl, contentDiv, historyEntry, actions) {
+  if (msgEl.querySelector(".ai-edit-area")) return; // 已在编辑中
+  actions.style.display = "none";
+  const original = contentDiv.textContent;
+  contentDiv.style.display = "none";
+
+  const editArea = document.createElement("div");
+  editArea.className = "ai-edit-area";
+
+  const ta = document.createElement("textarea");
+  ta.value = original;
+  ta.rows = Math.min(10, Math.max(2, original.split("\n").length + 1));
+
+  const btns = document.createElement("div");
+  btns.className = "ai-edit-btns";
+
+  const cancelBtn = document.createElement("button");
+  cancelBtn.type = "button";
+  cancelBtn.className = "ai-edit-cancel";
+  cancelBtn.textContent = "取消";
+
+  const saveBtn = document.createElement("button");
+  saveBtn.type = "button";
+  saveBtn.className = "ai-edit-save";
+  saveBtn.textContent = "保存";
+  saveBtn.disabled = !original.trim();
+
+  ta.addEventListener("input", () => { saveBtn.disabled = !ta.value.trim(); });
+
+  const restore = () => {
+    editArea.remove();
+    contentDiv.style.display = "";
+    actions.style.display = "";
+  };
+
+  cancelBtn.addEventListener("click", restore);
+  saveBtn.addEventListener("click", () => {
+    const newText = ta.value.trim();
+    if (!newText) return;
+    contentDiv.textContent = newText;
+    // 同步更新会话历史，后续对话基于修改后的内容
+    if (historyEntry) historyEntry.content = newText;
+    restore();
+  });
+
+  btns.appendChild(cancelBtn);
+  btns.appendChild(saveBtn);
+  editArea.appendChild(ta);
+  editArea.appendChild(btns);
+  msgEl.appendChild(editArea);
+  ta.focus();
+  ta.setSelectionRange(ta.value.length, ta.value.length);
 }
 
 // Show typing indicator
@@ -531,16 +615,18 @@ async function sendAiMessage() {
   if (!input) return;
 
   $("#ai-input").value = "";
-  aiHistory.push({ role: "user", content: input });
-  addMessage("user", input);
+  const userEntry = { role: "user", content: input };
+  aiHistory.push(userEntry);
+  addMessage("user", input, userEntry);
   showTyping();
   aiIsLoading = true;
 
   try {
     const result = await sendMessage(input, aiHistory.slice(0, -1));
-    aiHistory.push({ role: "assistant", content: result });
+    const aiEntry = { role: "assistant", content: result };
+    aiHistory.push(aiEntry);
     hideTyping();
-    const msgEl = addMessage("ai", result);
+    addMessage("ai", result, aiEntry);
   } catch (err) {
     hideTyping();
     addMessage("error", "Error: " + err.message);

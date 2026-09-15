@@ -81,6 +81,33 @@
 
 * { box-sizing: border-box; }
 
+/* ---------- 全站统一滚动条 ---------- */
+/* 细胶囊 + 主题色调，所有可滚动区域（页面、弹窗、消息区、文本框等）共用 */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--kraft-line) transparent;
+}
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--kraft-line);
+  border-radius: var(--radius-pill);
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--ink-faint);
+  background-clip: padding-box;
+}
+::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
 html, body {
   margin: 0;
   padding: 0;
@@ -229,8 +256,7 @@ button, input, textarea, select {
   gap: 2px;
   max-height: 32vh;
   overflow-y: auto;
-  scrollbar-width: thin;
-  scrollbar-color: rgba(255,255,255,0.25) transparent;
+  /* 滚动条样式使用全站统一规则 */
 }
 
 .app-rail .rail-tabs-head {
@@ -1209,29 +1235,130 @@ input:focus, textarea:focus, select:focus {
   white-space: pre-wrap;
 }
 
-/* AI 回复消息操作（复制按钮） */
-.ai-message-actions {
+/* AI 回复消息操作（悬停显示的复制/编辑小图标，位于气泡下方） */
+.ai-message-row {
   display: flex;
-  gap: 6px;
-  margin-top: 7px;
+  flex-direction: column;
+  max-width: 88%;
 }
 
-.ai-message-actions button {
+.ai-message-row-user { align-self: flex-end; }
+.ai-message-row-ai { align-self: flex-start; }
+
+/* 气泡在行内占满宽度，对齐交给行容器 */
+.ai-message-row .ai-message { align-self: stretch; max-width: 100%; }
+
+.ai-message-actions {
+  display: flex;
+  gap: 2px;
+  margin-top: 4px;
+  /* 默认隐藏，悬停消息时浮现 */
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity .15s var(--ease);
+  /* 与气泡边缘对齐 */
+  align-self: flex-start;
+}
+
+.ai-message-row-user .ai-message-actions { align-self: flex-end; }
+
+.ai-message-row:hover .ai-message-actions,
+.ai-message-row:has(.ai-edit-area) .ai-message-actions {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.ai-msg-btn {
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  background: transparent;
+  color: var(--ink-faint);
+  border-radius: var(--radius-xs);
+  cursor: pointer;
+  transition: background .14s var(--ease), color .14s var(--ease);
+}
+
+.ai-msg-btn svg { width: 13px; height: 13px; display: block; }
+
+.ai-msg-btn:hover {
+  background: rgba(0, 0, 0, 0.09);
+  color: var(--ink);
+}
+
+/* 用户消息是深绿底，图标用浅色 */
+.ai-message-user .ai-msg-btn { color: rgba(255, 255, 255, 0.7); }
+.ai-message-user .ai-msg-btn:hover {
+  background: rgba(255, 255, 255, 0.18);
+  color: #fff;
+}
+
+/* 消息编辑态 */
+.ai-edit-area {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 6px;
+  width: 100%;
+}
+
+.ai-edit-area textarea {
+  width: 100%;
+  min-height: 56px;
+  resize: vertical;
+  border: 1px solid var(--ink-green-700);
+  border-radius: var(--radius-s);
+  padding: 7px 9px;
+  font-size: 13px;
+  line-height: 1.55;
+  font-family: inherit;
+  color: var(--ink);
+  background: var(--paper-card);
+}
+
+.ai-edit-area textarea:focus {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(30, 74, 55, 0.14);
+}
+
+.ai-edit-btns {
+  display: flex;
+  gap: 6px;
+  justify-content: flex-end;
+}
+
+.ai-edit-save,
+.ai-edit-cancel {
   font-size: 11px;
-  padding: 3px 9px;
+  padding: 3px 10px;
   border-radius: var(--radius-pill);
   border: 1px solid var(--border);
-  background: var(--paper);
   cursor: pointer;
-  color: var(--ink-soft);
   transition: background .14s var(--ease), color .14s var(--ease), border-color .14s var(--ease);
 }
 
-.ai-message-actions button:hover {
-  background: var(--ink-green-700);
-  border-color: var(--ink-green-700);
+.ai-edit-cancel {
+  background: transparent;
+  color: var(--ink-soft);
+}
+
+.ai-edit-cancel:hover {
+  background: rgba(0, 0, 0, 0.07);
+  color: var(--ink);
+}
+
+.ai-edit-save {
+  border: none;
+  background: var(--ink-green-800);
   color: #fff;
 }
+
+.ai-edit-save:hover:not(:disabled) { background: var(--ink-green-700); }
+.ai-edit-save:disabled { opacity: 0.45; cursor: not-allowed; }
 
 /* 输入区域 */
 .ai-input-area {
@@ -1348,35 +1475,7 @@ input:focus, textarea:focus, select:focus {
   box-shadow: var(--shadow-lg);
   animation: modal-pop-in 0.2s var(--ease);
 }
-
-/* 精致细滚动条：圆角胶囊 + 主题色调，悬停加深 */
-.ai-modal-content::-webkit-scrollbar {
-  width: 8px;
-}
-.ai-modal-content::-webkit-scrollbar-track {
-  background: transparent;
-  margin: 6px 0;
-}
-.ai-modal-content::-webkit-scrollbar-thumb {
-  background: var(--kraft-line);
-  border-radius: var(--radius-pill);
-  border: 2px solid transparent;
-  background-clip: padding-box;
-}
-.ai-modal-content::-webkit-scrollbar-thumb:hover {
-  background: var(--ink-faint);
-  background-clip: padding-box;
-}
-.ai-modal-content::-webkit-scrollbar-corner {
-  background: transparent;
-}
-.ai-modal-content {
-  scrollbar-width: thin;
-  scrollbar-color: var(--kraft-line) transparent;
-}
-[data-theme="dark"] .ai-modal-content {
-  scrollbar-color: var(--kraft-line) transparent;
-}
+/* 滚动条样式使用全站统一规则 */
 
 .ai-modal-content h3 {
   margin-bottom: 18px;
