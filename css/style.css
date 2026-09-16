@@ -853,7 +853,7 @@ input:focus, textarea:focus, select:focus {
 
 .repeat-row {
   display: grid;
-  grid-template-columns: 110px 1fr auto;
+  grid-template-columns: 110px 1fr auto auto;
   gap: 8px;
   margin-bottom: 8px;
   align-items: center;
@@ -941,6 +941,22 @@ input:focus, textarea:focus, select:focus {
   transition: border-color .14s var(--ease), color .14s var(--ease), background .14s var(--ease);
 }
 .icon-btn:hover { border-color: var(--accent-text); color: var(--accent-text-strong); background: var(--kraft); }
+
+/* 参考资料跳转按钮：无边框幽灵样式，极简 */
+.ref-open {
+  border: none;
+  background: transparent;
+  color: var(--ink-faint);
+  width: 28px;
+  height: 28px;
+  padding: 0;
+}
+.ref-open svg { width: 15px; height: 15px; display: block; }
+.ref-open:hover:not(:disabled) {
+  background: var(--kraft);
+  color: var(--accent-text-strong);
+}
+.ref-open:disabled { opacity: 0.25; cursor: default; background: transparent; }
 
 .add-row-btn {
   margin-top: 4px;
@@ -1826,6 +1842,12 @@ body.pdf-capture table.doc-table .doc-bullet { padding-left: 1.6em; text-indent:
   .app-rail .rail-tab.active { border-left-color: transparent; border-bottom-color: var(--pencil-red); }
   .rail-tab-title { max-width: 120px; }
   .app-rail .rail-foot { display: none; }
+  /* 平板：主题按钮回到文档流，靠右排列，不再绝对定位 */
+  .app-rail .theme-toggle {
+    position: static;
+    margin-left: auto;
+    flex-shrink: 0;
+  }
   .app-main { padding: 24px; }
   .field-grid { grid-template-columns: 1fr; }
 
@@ -2001,13 +2023,60 @@ body.pdf-capture table.doc-table .doc-bullet { padding-left: 1.6em; text-indent:
   }
   /* 参考资料行 */
   .repeat-row {
-    grid-template-columns: 90px 1fr auto;
+    grid-template-columns: 90px 1fr auto auto;
     gap: 6px;
   }
   /* AI 占位 */
   .ai-placeholder {
     padding: 12px;
     font-size: 12px;
+  }
+
+  /* ---------- 移动端适配 ---------- */
+
+  /* AI 悬浮按钮缩小、贴边 */
+  .ai-fab {
+    bottom: 20px;
+    right: 16px;
+    width: 46px;
+    height: 46px;
+  }
+
+  /* AI 窗口：铺满小屏（留出边距），重置拖拽产生的内联样式 */
+  .ai-chat {
+    left: 8px !important;
+    right: 8px !important;
+    top: 8px !important;
+    bottom: 8px !important;
+    width: auto !important;
+    height: auto !important;
+    max-height: none;
+  }
+  .ai-chat .ai-messages { max-height: none; flex: 1; }
+
+  /* 触屏没有悬停：消息操作图标常显 */
+  .ai-message-row .ai-message-actions {
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  /* AI 设置弹窗：贴边铺满 */
+  .ai-modal-content {
+    width: calc(100% - 24px);
+    max-height: 88vh;
+  }
+
+  /* 触屏禁用拖拽把手的光标提示（拖拽仍可用鼠标场景） */
+  .ai-chat-header { cursor: default; }
+  .ai-chat-resize { display: none; }
+
+  /* 手机：主题按钮钉在顶栏右上角（品牌文字短，右侧空间充足） */
+  .app-rail .theme-toggle {
+    position: absolute;
+    left: auto;
+    bottom: auto;
+    top: 11px;
+    right: 14px;
   }
 }
 

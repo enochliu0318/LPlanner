@@ -1,10 +1,10 @@
-import { Storage } from "./storage.js?v=67";
-import { exportPlanToDocx } from "./docx-export.js?v=67";
-import { exportPlanToPdf } from "./pdf-export.js?v=67";
-import { Tabs, NEW_TAB, renderRailTabs } from "./tabs.js?v=67";
-import { buildDocumentModel } from "./document-model.js?v=67";
-import { sendMessage, getAiConfig, saveAiConfig } from "./ai.js?v=67";
-import { onStatus as onFsStatus, getFolderName } from "./fs-sync.js?v=67";
+import { Storage } from "./storage.js?v=70";
+import { exportPlanToDocx } from "./docx-export.js?v=70";
+import { exportPlanToPdf } from "./pdf-export.js?v=70";
+import { Tabs, NEW_TAB, renderRailTabs } from "./tabs.js?v=70";
+import { buildDocumentModel } from "./document-model.js?v=70";
+import { sendMessage, getAiConfig, saveAiConfig } from "./ai.js?v=70";
+import { onStatus as onFsStatus, getFolderName } from "./fs-sync.js?v=70";
 
 const params = new URLSearchParams(location.search);
 const existingId = params.get("id");
@@ -80,10 +80,27 @@ function buildReferenceRow(ref, i) {
   row.innerHTML = `
     <input type="text" class="ref-label" placeholder="标签，如 PPT" value="${escapeAttr(ref.label || "")}" />
     <input type="url" class="ref-url" placeholder="https://..." value="${escapeAttr(ref.url || "")}" />
+    <button type="button" class="icon-btn ref-open" title="打开链接" aria-label="打开链接" disabled>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="7" y1="17" x2="17" y2="7"/><polyline points="7 7 17 7 17 17"/></svg>
+    </button>
     <button type="button" class="icon-btn ref-remove" title="删除">✕</button>
   `;
   row.querySelector(".ref-remove").addEventListener("click", () => {
     row.remove();
+  });
+
+  // 打开链接：新标签页跳转到该网页
+  const urlInput = row.querySelector(".ref-url");
+  const openBtn = row.querySelector(".ref-open");
+  const updateOpenBtn = () => { openBtn.disabled = !urlInput.value.trim(); };
+  urlInput.addEventListener("input", updateOpenBtn);
+  updateOpenBtn();
+  openBtn.addEventListener("click", () => {
+    let url = urlInput.value.trim();
+    if (!url) return;
+    // 没写协议时默认按 https 处理
+    if (!/^[a-zA-Z][a-zA-Z0-9+.-]*:/.test(url)) url = "https://" + url;
+    window.open(url, "_blank", "noopener");
   });
   return row;
 }
@@ -386,8 +403,12 @@ function restoreAiChatRect() {
   } catch (err) { /* 数据损坏时忽略 */ }
 }
 
+// 小屏/触屏设备禁用拖动缩放（CSS 已把窗口改为全屏面板）
+const aiDragDisabled = () => window.matchMedia("(max-width: 600px)").matches;
+
 // 按住标题栏拖动窗口位置
 aiChatHeader.addEventListener("mousedown", (e) => {
+  if (aiDragDisabled()) return;
   if (e.target.closest(".ai-chat-tool")) return; // 点工具按钮不触发拖动
   const rect = aiChatEl.getBoundingClientRect();
   aiChatDrag = {
@@ -402,6 +423,7 @@ aiChatHeader.addEventListener("mousedown", (e) => {
 
 // 左下角把手调整窗口大小（向左拖变宽，向下拖变高）
 aiChatGrip.addEventListener("mousedown", (e) => {
+  if (aiDragDisabled()) return;
   const rect = aiChatEl.getBoundingClientRect();
   aiChatDrag = {
     type: "resize",
