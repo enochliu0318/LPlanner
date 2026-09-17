@@ -1,10 +1,10 @@
-import { Storage } from "./storage.js?v=70";
-import { exportPlanToDocx } from "./docx-export.js?v=70";
-import { exportPlanToPdf } from "./pdf-export.js?v=70";
-import { Tabs, NEW_TAB, renderRailTabs } from "./tabs.js?v=70";
-import { buildDocumentModel } from "./document-model.js?v=70";
-import { sendMessage, getAiConfig, saveAiConfig } from "./ai.js?v=70";
-import { onStatus as onFsStatus, getFolderName } from "./fs-sync.js?v=70";
+import { Storage } from "./storage.js?v=71";
+import { exportPlanToDocx } from "./docx-export.js?v=71";
+import { exportPlanToPdf } from "./pdf-export.js?v=71";
+import { Tabs, NEW_TAB, renderRailTabs } from "./tabs.js?v=71";
+import { buildDocumentModel } from "./document-model.js?v=71";
+import { sendMessage, getAiConfig, saveAiConfig } from "./ai.js?v=71";
+import { onStatus as onFsStatus, getFolderName } from "./fs-sync.js?v=71";
 
 const params = new URLSearchParams(location.search);
 const existingId = params.get("id");
@@ -353,11 +353,14 @@ let aiChatOpen = false;
 let aiIsLoading = false;
 let aiHistory = [];
 
-// Toggle chat window
+// Toggle chat window（每次打开都回到默认位置和大小）
 $("#ai-fab").addEventListener("click", () => {
   aiChatOpen = !aiChatOpen;
   $("#ai-chat").style.display = aiChatOpen ? "flex" : "none";
-  if (aiChatOpen) $("#ai-input").focus();
+  if (aiChatOpen) {
+    resetAiChatRect();
+    $("#ai-input").focus();
+  }
 });
 
 $("#ai-chat-close").addEventListener("click", () => {
@@ -365,42 +368,20 @@ $("#ai-chat-close").addEventListener("click", () => {
   $("#ai-chat").style.display = "none";
 });
 
-/* ---------- AI 窗口拖动 & 缩放（位置/大小持久化） ---------- */
+/* ---------- AI 窗口拖动 & 缩放 ---------- */
+/* 每次重新打开都回到默认位置（右下角）和默认大小，不持久化 */
 
-const AI_CHAT_RECT_KEY = "lesson_planner_ai_chat_v1";
 const aiChatEl = $("#ai-chat");
 const aiChatHeader = $(".ai-chat-header");
 const aiChatGrip = $("#ai-chat-resize");
 let aiChatDrag = null;
 
-function saveAiChatRect() {
-  try {
-    localStorage.setItem(AI_CHAT_RECT_KEY, JSON.stringify({
-      left: aiChatEl.style.left,
-      top: aiChatEl.style.top,
-      width: aiChatEl.style.width,
-      height: aiChatEl.style.height,
-    }));
-  } catch (err) { /* 存储不可用时忽略 */ }
-}
-
-function restoreAiChatRect() {
-  try {
-    const raw = localStorage.getItem(AI_CHAT_RECT_KEY);
-    if (!raw) return;
-    const rect = JSON.parse(raw);
-    if (rect.left) {
-      aiChatEl.style.left = rect.left;
-      aiChatEl.style.top = rect.top;
-      aiChatEl.style.right = "auto";
-      aiChatEl.style.bottom = "auto";
-    }
-    if (rect.width) aiChatEl.style.width = rect.width;
-    if (rect.height) {
-      aiChatEl.style.height = rect.height;
-      aiChatEl.classList.add("ai-chat-resized");
-    }
-  } catch (err) { /* 数据损坏时忽略 */ }
+/** 清除拖拽/缩放留下的内联样式，恢复 CSS 默认位置和大小 */
+function resetAiChatRect() {
+  aiChatEl.classList.remove("ai-chat-resized");
+  ["left", "top", "right", "bottom", "width", "height"].forEach(k => {
+    aiChatEl.style[k] = "";
+  });
 }
 
 // 小屏/触屏设备禁用拖动缩放（CSS 已把窗口改为全屏面板）
@@ -468,10 +449,7 @@ window.addEventListener("mouseup", () => {
   if (!aiChatDrag) return;
   aiChatDrag = null;
   document.body.style.userSelect = "";
-  saveAiChatRect();
 });
-
-restoreAiChatRect();
 
 // Add message to chat（带一键复制）
 const COPY_ICON_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>';
