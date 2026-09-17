@@ -1,10 +1,10 @@
-import { Storage } from "./storage.js?v=71";
-import { exportPlanToDocx } from "./docx-export.js?v=71";
-import { exportPlanToPdf } from "./pdf-export.js?v=71";
-import { Tabs, NEW_TAB, renderRailTabs } from "./tabs.js?v=71";
-import { buildDocumentModel } from "./document-model.js?v=71";
-import { sendMessage, getAiConfig, saveAiConfig } from "./ai.js?v=71";
-import { onStatus as onFsStatus, getFolderName } from "./fs-sync.js?v=71";
+import { Storage } from "./storage.js?v=72";
+import { exportPlanToDocx } from "./docx-export.js?v=72";
+import { exportPlanToPdf } from "./pdf-export.js?v=72";
+import { Tabs, NEW_TAB, renderRailTabs } from "./tabs.js?v=72";
+import { buildDocumentModel } from "./document-model.js?v=72";
+import { sendMessage, getAiConfig, saveAiConfig } from "./ai.js?v=72";
+import { onStatus as onFsStatus, getFolderName } from "./fs-sync.js?v=72";
 
 const params = new URLSearchParams(location.search);
 const existingId = params.get("id");
@@ -437,11 +437,11 @@ window.addEventListener("mousemove", (e) => {
   } else {
     // 锁定右边缘，让左边缘跟随鼠标（把手在左下角）
     const rightEdge = aiChatDrag.origLeft + aiChatDrag.origW;
-    const newW = Math.min(Math.max(aiChatDrag.origW - dx, 300), window.innerWidth * 0.92);
+    const newW = Math.min(Math.max(aiChatDrag.origW - dx, 240), window.innerWidth * 0.92);
     aiChatEl.style.width = Math.round(newW) + "px";
     aiChatEl.style.left = Math.round(rightEdge - newW) + "px";
     aiChatEl.style.right = "auto";
-    aiChatEl.style.height = Math.min(Math.max(aiChatDrag.origH + dy, 320), window.innerHeight * 0.92) + "px";
+    aiChatEl.style.height = Math.min(Math.max(aiChatDrag.origH + dy, 260), window.innerHeight * 0.92) + "px";
   }
 });
 

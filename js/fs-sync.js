@@ -15,7 +15,7 @@
    - 仅支持 Chrome / Edge；其他浏览器自动隐藏该功能
    ============================================================ */
 
-import { Storage } from "./storage.js?v=71";
+import { Storage } from "./storage.js?v=72";
 
 const DB_NAME = "lesson_planner_fs";
 const STORE = "handles";

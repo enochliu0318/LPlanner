@@ -1069,7 +1069,7 @@ input:focus, textarea:focus, select:focus {
   width: 380px;
   max-height: 600px;
   background: var(--paper);
-  border: 1px solid var(--border);
+  border: none;
   border-radius: var(--radius-l);
   box-shadow: var(--shadow-lg);
   z-index: 100;
