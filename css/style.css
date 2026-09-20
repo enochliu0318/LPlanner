@@ -1624,7 +1624,13 @@ input:focus, textarea:focus, select:focus {
 #print-root { display: none !important; }
 
 @media print {
-  .app-rail, .app-main > *:not(#print-root) { display: none !important; }
+  /* 整个应用外壳（侧栏 + 主区域）在打印时完全隐藏，
+     否则其 min-height:100vh 会占据一整页空白，使 #print-root 从第二页开始 */
+  .app-shell,
+  .ai-fab, .ai-chat, .ai-modal, .ai-fab-badge,
+  .toast {
+    display: none !important;
+  }
   #print-root { display: block !important; }
 
   @page {
