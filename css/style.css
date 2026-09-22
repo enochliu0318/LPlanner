@@ -154,6 +154,12 @@ button, input, textarea, select {
   box-shadow: var(--shadow-md);
   position: relative;
   z-index: 1;
+  /* 侧栏固定不动：视口高度 + 固定定位，主内容区域独立滚动 */
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  overflow-y: auto;
+  overflow-x: hidden;
 }
 
 .app-rail .brand {
@@ -1839,7 +1845,17 @@ body.pdf-capture table.doc-table .doc-bullet { padding-left: 1.6em; text-indent:
 /* 平板横屏 (900px 以下) */
 @media (max-width: 900px) {
   .app-shell { flex-direction: column; }
-  .app-rail { width: 100%; flex-direction: row; align-items: center; padding: 14px 18px; gap: 18px; }
+  /* 平板/手机上侧栏回到文档流正常滚动（顶部横条不固定） */
+  .app-rail {
+    width: 100%;
+    flex-direction: row;
+    align-items: center;
+    padding: 14px 18px;
+    gap: 18px;
+    position: static;
+    height: auto;
+    overflow: visible;
+  }
   .app-rail .brand { border-bottom: none; padding-bottom: 0; }
   .app-rail nav { flex-direction: row; }
   .app-rail .rail-tabs { flex-direction: row; align-items: center; max-height: none; overflow-y: hidden; overflow-x: auto; flex: 1; gap: 4px; min-width: 0; }
